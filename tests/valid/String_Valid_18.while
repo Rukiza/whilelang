@@ -1,0 +1,5 @@
+int main() {
+    string[] s = ["Hello","World"];
+    s[0] = "hello";
+    assert s[0] == "hello";
+}

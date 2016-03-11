@@ -1,0 +1,19 @@
+bool allPositive(int[] items) {
+  int i = 0;
+
+  do {
+    if(items[i] < 0) {
+      return false;
+    }
+    i = i + 1;
+  } while(i < |items|);
+
+  return true;
+}
+
+void main() {
+    assert allPositive([1]);
+    assert allPositive([1,2,3]);
+    assert !allPositive([-1]);
+    assert !allPositive([1,2,-1]);            
+}

@@ -1,0 +1,16 @@
+int f(int[] items) {
+  int i = 0;
+  int r;
+  do {
+      i = i + 1;
+      r = i;      
+  } while(i);
+
+  return r;
+}
+
+void main() {
+    assert f([1]) == 1;
+    assert f([1,2,3]) == 3;
+    assert f([-1]) == 1;
+}

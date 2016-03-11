@@ -1,0 +1,15 @@
+type point is {int x,int y}
+type listint is int[]
+
+void main() {
+     listint li = [1,2,3];     
+     point p = {x:1,y:2};
+     int x = p.x;
+     //
+     assert x == 1;
+     assert p.y == 2;
+     assert |li| == 3;
+     assert li[0] == 1;
+     assert li[1] == 2;
+     assert li[2] == 3;     
+}

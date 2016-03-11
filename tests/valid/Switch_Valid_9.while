@@ -1,0 +1,14 @@
+int f(bool x) {
+  switch(x) {
+    case true:
+      return 0;
+    case false:
+      return 1;
+ }
+ return 3; // dead code
+}
+
+int main() {
+    assert 0 == f(true);
+    assert 1 == f(false);
+}

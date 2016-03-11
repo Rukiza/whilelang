@@ -1,0 +1,34 @@
+string f(char c) {
+    string r;
+    switch(c) {
+        case 'N':
+            r = "KNIGHT";
+            break;
+        case 'B':
+            r = "BISHOP";
+            break;
+        case 'R':
+            r = "ROOK";
+            break;
+        case 'Q':
+            r = "QUEEN";
+            break;
+        case 'K':
+            r = "KING";
+            break;
+        default:
+            r = "NOTHING";
+            break;
+    }
+    return r;
+}
+
+void main() {
+    assert "KNIGHT" == f('N');
+    assert "KING" == f('K');
+    assert "QUEEN" == f('Q');
+    assert "BISHOP" == f('B');
+    assert "ROOK" == f('R');
+    assert "NOTHING" == f('e');
+    assert "NOTHING" == f('1');
+}

@@ -1,0 +1,15 @@
+int f(int[] items) {
+  int i = 0;
+  int r = 0;  
+  do {
+      if(i == 1) { return r; return 1; }
+  } while(i < |items|);
+
+  return r;
+}
+
+void main() {
+    assert f([1]) == 1;
+    assert f([1,2,3]) == 3;
+    assert f([-1]) == 1;
+}

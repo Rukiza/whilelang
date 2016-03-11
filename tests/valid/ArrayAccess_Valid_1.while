@@ -1,0 +1,11 @@
+int f(int[] x) {
+    int y = x[0];
+    int z = x[0];
+    return z+y;
+}
+
+void main() {
+    int[] arr = [1,2,3];
+    assert f(arr) == 2;
+    assert arr == [1,2,3];
+}

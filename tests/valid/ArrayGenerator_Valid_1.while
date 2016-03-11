@@ -1,0 +1,14 @@
+int[] inc(int[] xs) {
+    int[] r = [0;|xs|];
+    for(int i=0;i!=|xs|;i=i+1) {
+        r[i] = xs[i]+1;
+    }
+    return r;
+}
+
+void main() {
+    int[] x = inc([1,2,3]);
+    assert x == [2,3,4];
+    int[] y = inc([]);
+    assert y == [];    
+}

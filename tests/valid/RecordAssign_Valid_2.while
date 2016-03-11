@@ -1,0 +1,21 @@
+type tac2ta is {int f1, int f2}
+type tac2tb is {int f1, int f2}
+
+tac2tb f(tac2ta x) {
+    return {f1: x.f1-1, f2: x.f2};
+}
+
+void main() {
+    {int f1,int f2} x = {f1:2,f2:3};
+    assert x == {f1:2,f2:3};
+    assert x.f1 == 2;
+    assert x.f2 == 3;
+    x.f1 = 1;
+    assert x == {f1:1,f2:3};
+    assert x.f1 == 1;
+    assert x.f2 == 3;    
+    {int f1,int f2} y = f(x);
+    assert y == {f1:0,f2:3};
+    assert y.f1 == 0;
+    assert y.f2 == 3;    
+}

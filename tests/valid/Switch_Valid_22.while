@@ -1,0 +1,23 @@
+int f(int x) {
+  switch(x) {
+    case 0:
+    case 1:
+    case 2:
+      if(x == 0) {
+        break;
+      } 
+      x = x - 1;
+      break;
+    default:
+      x = x + 1;
+      break;      
+  }
+  return x;
+}
+
+int main() {
+    assert 0 == f(0);
+    assert 0 == f(1);
+    assert 1 == f(2);
+    assert 4 == f(3);
+}

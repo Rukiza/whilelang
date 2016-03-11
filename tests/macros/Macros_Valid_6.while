@@ -1,0 +1,10 @@
+macro ONE(x) is 1
+
+int f(int y) {
+    return 1+ONE(y);
+}
+
+void main() {
+    assert f(1) == 2;
+    assert f(2) == 2;
+}

@@ -1,0 +1,11 @@
+bool sign(int x) {
+    switch(x) {
+    case 0:
+    case 1:
+	break;
+	x = 1;
+    default:
+	return false;
+    }
+    return true;
+}

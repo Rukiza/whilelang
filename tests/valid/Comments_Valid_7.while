@@ -1,0 +1,6 @@
+void main() {
+    /* A valid multi-line comment! 
+     * Which spans multiple lines
+     */
+    assert true;
+}

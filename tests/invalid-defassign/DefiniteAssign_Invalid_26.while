@@ -1,0 +1,17 @@
+int f(int x) {
+    int y;
+    while(x >= 0) {
+      y = x;
+      return y;
+    }
+    return y;
+}
+
+
+void main() {
+    print f(1);
+    print f(10);
+    print f(11);
+    print f(1212);
+    print f(-1212);
+}

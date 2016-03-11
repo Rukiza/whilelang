@@ -1,0 +1,20 @@
+int sum(int[] items) {
+  if(|items| > 0) {
+      int i = 0;
+      int r = 0;
+      do {
+	  r = r + items[i];
+	  i = i + 1;
+      } while(i < |items|);
+      
+      return r;
+  } else {
+      return 0;
+  }
+}
+
+void main() {
+    assert sum([1]) == 1;
+    assert sum([1,2,3]) == 6;
+    assert sum([-1]) == -1;
+}

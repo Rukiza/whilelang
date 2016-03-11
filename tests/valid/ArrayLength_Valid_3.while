@@ -1,0 +1,10 @@
+int len(int[] l) {
+    return |l|;
+}
+
+void main() {
+    int[] l = [1,2,3];
+    assert len(l) == 3;
+    l = [1,2,3,4,5,6];
+    assert len(l) == 6;
+}

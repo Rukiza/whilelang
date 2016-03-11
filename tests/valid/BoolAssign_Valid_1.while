@@ -1,0 +1,6 @@
+void main() {
+    bool x = true;
+    assert x == true;
+    x = false;
+    assert x == false;
+}

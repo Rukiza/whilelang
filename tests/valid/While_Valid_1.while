@@ -1,0 +1,16 @@
+int[] reverse(int[] ls) {
+    int i = |ls|;
+    int j = 0;
+    int[] rs = ls;
+
+    while(i > 0) {
+        i = i - 1;
+        rs[i] = ls[j];
+	j = j + 1;
+    }
+    return rs;
+}
+
+void main() {
+    assert reverse([1,2,3,4,5]) == [5,4,3,2,1];
+}

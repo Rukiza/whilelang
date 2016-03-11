@@ -1,0 +1,12 @@
+type Record is {bool flag, int code}
+
+void main() {
+    Record x = {flag:true, code:0};
+    assert x.flag == true;
+    assert x.code == 0;
+    assert x == {flag:true,code:0};
+    x.flag = false;
+    assert x.flag == false;
+    assert x.code == 0;
+    assert x == {flag:false,code:0};
+}

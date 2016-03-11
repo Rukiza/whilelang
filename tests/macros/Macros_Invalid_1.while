@@ -1,0 +1,5 @@
+macro NOT(x) is !x
+
+void main() {
+    assert 1 == NOT(true);
+}

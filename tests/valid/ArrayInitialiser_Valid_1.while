@@ -1,0 +1,15 @@
+int[] f(int a, int b, int c) {
+      return [a,b,c];
+}
+
+void main() {
+     int[] arr = f(1,2,3);
+     assert |arr| == 3;
+     assert arr[0] == 1;
+     assert arr[1] == 2;
+     assert arr[2] == 3;          
+     arr = f(0,0,1);
+     assert arr[0] == 0;
+     assert arr[1] == 0;
+     assert arr[2] == 1;          
+}

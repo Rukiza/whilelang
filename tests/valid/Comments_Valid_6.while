@@ -1,0 +1,4 @@
+/* A valid multi-line comment! */
+void main() {
+    assert true;
+}

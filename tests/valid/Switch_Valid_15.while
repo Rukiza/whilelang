@@ -1,0 +1,17 @@
+string f(char x) {
+  switch(x) {
+    case 'r':
+      return "RED";
+    case 'b':
+      return "BLUE";
+    case 'g':
+      return "GREEN";
+ }
+  return "";
+}
+
+int main() {
+    assert "RED" == f('r');
+    assert "GREEN" == f('g');
+    assert "BLUE" == f('b');
+}

@@ -1,0 +1,16 @@
+int[] trim(int[] ls, int n) {
+    int i = 0;
+    int[] rs = [0;n];
+
+    while(i < n) {
+    	if(ls[i] == n) { break; }
+        rs[i] = ls[i];
+        i = i + 1;
+    }
+    return rs;
+}
+
+void main() {
+    assert trim([4,5,6],2) == [4,5];
+    assert trim([1,2,3],2) == [1,0];
+}

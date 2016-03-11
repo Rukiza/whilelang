@@ -1,0 +1,13 @@
+bool f(int[][] x) {
+    if(|x[0]| > 2) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void main() {
+    assert f([[1,2,3],[1]]) == true;
+    assert f([[1],[1,2,3]]) == false;
+    assert f([[],[]]) == false;
+}

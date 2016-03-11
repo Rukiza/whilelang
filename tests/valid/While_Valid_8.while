@@ -1,0 +1,21 @@
+int f(int x) {
+    int y;
+    while(x >= 0) {
+        if(x < 0) {
+    	  return 0;
+    	} else {
+	  y = x;
+	}
+        return y;
+    }
+    return 0;
+}
+
+
+void main() {
+    assert 1 == f(1);
+    assert 10 == f(10);
+    assert 11 == f(11);
+    assert 1212 == f(1212);
+    assert 0 == f(-1212);
+}

@@ -1,0 +1,101 @@
+<project name="whilelang" default="jarfile">  
+  <property name="version" value="0.2"/>
+
+  <!-- ============================================== -->
+  <!-- Build Commands -->
+  <!-- ============================================== -->
+
+  <target name="build">
+    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath=""> 
+      <src path="src"/>
+      <include name="*/**"/>
+      <exclude name="whilelang/testing/**"/> /home/brewershan/SWEN430/whilelang-v0.2
+      <exclude name="*/**/package-info.java"/> 
+    </javac>
+  </target>
+
+  <!-- ============================================== -->
+  <!-- Documenation --> 
+  <!-- ============================================== -->
+
+  <target name="doc">
+    <javadoc
+       destdir="docs/api"
+       author="true"
+       version="true"
+       use="true"
+       windowtitle="While Lang Compiler API">
+      <doctitle><![CDATA[<h1>The While Lang Compiler (v${version})</h1>]]></doctitle>
+      <bottom><![CDATA[<i>Copyright &#169; 2013 David J. Pearce. All Rights Reserved.</i>]]></bottom>
+      <packageset dir="src">
+	<include name="whilelang/**"/>
+	<exclude name="whilelang/testing/**"/>
+      </packageset>
+      </javadoc>
+  </target>
+
+  <!-- ============================================== -->
+  <!-- Distribution -->
+  <!-- ============================================== -->
+
+  <target name="jarfile" depends="build">
+    <mkdir dir="lib"/>
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Main-Class" value="whilelang.Main"/>
+    </manifest>    
+    <jar destfile="lib/whilelang-v${version}.jar" manifest="tmp/MANIFEST.MF">
+      <fileset dir="src">
+	<include name="whilelang/**/*.java"/>
+	<include name="whilelang/**/*.class"/>
+      </fileset>
+    </jar>
+    <delete dir="tmp"/>
+    <echo message="============================================="/>
+    <echo message="BUILT: lib/whilelang-${version}.jar"/>
+    <echo message="============================================="/>
+  </target>
+
+  <target name="dist" depends="jarfile">
+    <mkdir dir="whilelang-v${version}"/>
+    <copy todir="whilelang-v${version}">
+      <fileset dir=".">
+	<include name="LICENSE"/>
+	<include name="build.xml"/>
+	<include name="src/**/*.java"/>
+	<include name="tests/**/*.while"/>	
+	<include name="lib/*-v${version}.jar"/>
+      </fileset>
+    </copy>
+    <tar destfile="dist/whilelang-src-v${version}.tar" longfile="gnu">
+      <tarfileset dir="." includes="whilelang-v${version}/**/*"/>
+    </tar>
+    <gzip destfile="dist/whilelang-src-v${version}.tgz" src="dist/whilelang-src-v${version}.tar"/>
+    <delete file="dist/whilelang-src-v${version}.tar"/>
+    <delete dir="whilelang-v${version}"/>
+    <echo message="============================================="/>
+    <echo message="BUILT: dist/whilelang-src-v${version}.tgz"/>
+    <echo message="============================================="/>
+  </target>
+
+  
+  <!-- ============================================== -->
+  <!-- Misc Commands -->
+  <!-- ============================================== -->
+
+  <target name="clean">
+    <delete includeEmptyDirs="true" failonerror="false">
+      <fileset file="*~"/>
+      <fileset dir="lib"/>
+      <fileset dir="dist"/>
+      <fileset dir="docs"/>
+      <fileset dir="tests">
+	<include name="**/*.class"/>
+	<include name="**/*.wyil"/>
+	<include name="**/*.o"/>
+      </fileset>
+    </delete>
+  </target>
+
+</project>

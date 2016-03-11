@@ -1,0 +1,18 @@
+int f(int x, int y){
+    bool a = true;
+    
+    if(x < y) {
+        a = false;
+    }    
+    if(!a) {
+        return x + y;
+    } else {
+        return 123;
+    }
+}
+
+void main() {
+    assert f(1,1) == 123;
+    assert f(0,11) == 11;
+    assert f(11,0) == 123;
+}

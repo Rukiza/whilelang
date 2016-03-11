@@ -1,0 +1,14 @@
+bool contains(int[] xs, int x) {
+    int i = 0;
+    while(i < |xs|) {
+	if(xs[i] != x) {
+	    i = i + 1;
+	    continue;
+	} else {
+	    return true;
+	}
+	i = i + 1;
+    }
+
+    return false;
+}

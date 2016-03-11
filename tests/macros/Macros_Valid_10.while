@@ -1,0 +1,15 @@
+macro NOT(x) is !x
+
+bool f(bool x) {
+    switch(NOT(x)) {
+    case true:
+	return false;
+    default:
+	return true;
+    }
+}
+
+void main() {
+    assert f(true) == true;
+    assert f(false) == false;
+}

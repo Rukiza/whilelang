@@ -1,0 +1,6 @@
+void main() {
+     assert (10/2) == 5;
+     assert (10/3) == 3;
+     assert (-10/3) == -3;
+     assert (1/4) == 0; 
+}

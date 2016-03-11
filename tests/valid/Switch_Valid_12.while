@@ -1,0 +1,30 @@
+string f(int x, int y) {
+  switch(x) {
+    case 0:
+      switch(y) {
+      case 0:
+      	   return "RED RED";
+      case 1:
+           return "RED BLUE";
+      case 2:
+           return "RED GREEN";
+     }
+    case 1:
+      return "BLUE ???";
+    case 2:
+      return "GREEN ???";
+ }
+  return "";
+}
+
+int main() {
+    int Red = 0;
+    int Blue = 1;
+    int Green = 2;
+    //
+    assert "RED RED" == f(Red,Red);
+    assert "RED BLUE" == f(Red,Blue);
+    assert "RED GREEN" == f(Red,Green);
+    assert "BLUE ???" == f(Blue,Red);
+    assert "GREEN ???" == f(Green,Red);
+}

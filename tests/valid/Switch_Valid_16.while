@@ -1,0 +1,19 @@
+int f(int[] x) {
+  switch(x) {
+    case []:
+      return 0;
+    case [0]:
+      return 1;
+    case [0,1]:
+      return 2;
+  }
+  return 3;
+}
+
+int main() {
+    assert 0 == f([]);
+    assert 1 == f([0]);
+    assert 2 == f([0,1]);
+    assert 3 == f([1]);
+    assert 3 == f([0,1,2]);
+}

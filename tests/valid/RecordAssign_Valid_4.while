@@ -1,0 +1,13 @@
+type rec is {int b1, int b2}
+
+rec f(int b) {
+    return {b1:b,b2:2};
+}
+
+void main() {
+    int b = 1;
+    rec bs = f(b);
+    assert bs == {b1:1,b2:2};
+    bs = {b1:b,b2:b};
+    assert bs == {b1:1,b2:1};
+}

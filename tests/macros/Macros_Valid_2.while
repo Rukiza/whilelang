@@ -1,0 +1,10 @@
+macro INC(x) is x+1
+
+int f(int y) {
+    return INC(y);
+}
+
+void main() {
+    assert f(1) == 2;
+    assert f(2) == 3;
+}

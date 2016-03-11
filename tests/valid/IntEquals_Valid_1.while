@@ -1,0 +1,13 @@
+string f(int x, int y) {
+    if(x == y) {
+        return "EQUAL";
+    } else {
+        return "NOT EQUAL";
+    }
+}
+
+void main() {
+   assert f(1,4) == "NOT EQUAL";
+   assert f(1,4) == "NOT EQUAL";
+   assert f(0,0) == "EQUAL";
+}

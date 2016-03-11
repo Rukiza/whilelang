@@ -1,0 +1,13 @@
+int f(int x) {
+  switch(x) {
+    case 0:
+      return 0;
+  }
+  return x + 1;
+}
+
+int main() {
+    assert 0 == f(0);
+    assert 2 == f(1);
+    assert 3 == f(2);    
+}

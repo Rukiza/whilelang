@@ -1,0 +1,12 @@
+type tac1tup is {int f1, int f2}
+
+tac1tup f() {
+    return {f1:2,f2:3};
+}
+
+void main() {
+    tac1tup x = f();  
+    assert x == {f1:2,f2:3};
+    x.f1 = x.f2 - 2;
+    assert x == {f1:1,f2:3};
+}

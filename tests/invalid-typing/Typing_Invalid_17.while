@@ -1,0 +1,4 @@
+int f({int f} r) {
+    r.f = false;
+    return 0;
+}

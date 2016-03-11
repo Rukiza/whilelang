@@ -1,0 +1,15 @@
+int f(int x) {
+    if(x < 10) {
+        return 1;
+    } else {
+        return 2;
+    }
+}
+
+void main() {
+    assert 1 == f(1);
+    assert 2 == f(10);
+    assert 2 == f(11);
+    assert 2 == f(1212);
+    assert 1 == f(-1212);
+}

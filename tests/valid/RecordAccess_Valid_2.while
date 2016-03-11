@@ -1,0 +1,17 @@
+type IntPoint is {int x, int y}
+type BoolPoint is {bool x, bool y}
+
+int sum1(IntPoint vp) {
+    return vp.x + vp.y;
+}
+
+bool sum2(BoolPoint vp) {
+    return vp.x && vp.y;
+}
+
+void main() {
+    IntPoint ip = {x:1, y:2};
+    assert sum1(ip) == 3;
+    BoolPoint rp = {x:true, y:false};
+    assert sum2(rp) == false;
+}

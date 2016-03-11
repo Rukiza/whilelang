@@ -1,0 +1,14 @@
+type nint is int
+
+nint[][] move(int from, int to, nint[][] arr) {
+    nint tmp = arr[from][from+1];
+    arr[to] = arr[from];
+    arr[from] = [];
+    return arr;
+}
+
+void main() {
+    nint[][] ls = [[1,2,3],[4,5,6],[7,8,9]];
+    ls = move(0,1,ls);
+    assert ls == [[],[1,2,3],[7,8,9]];
+}

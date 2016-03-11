@@ -1,0 +1,8 @@
+void main() {
+    bool[] ls = [true,false,true];
+    assert ls == [true,false,true];
+    assert ls[0] == true;
+    ls[0] = false;
+    assert ls == [false,false,true];
+    assert ls[0] == false;
+}

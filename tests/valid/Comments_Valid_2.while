@@ -1,0 +1,4 @@
+void main() {
+    // A valid single-line comment!
+    assert true;
+}

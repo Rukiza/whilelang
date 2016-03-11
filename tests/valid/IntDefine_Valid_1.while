@@ -1,0 +1,15 @@
+type ir1nat is int
+
+int f(ir1nat x) {
+    if(x > 2) {
+        int y = x;
+        return y;
+    }
+    return 0;
+}
+
+void main() {
+     assert f(1) == 0;
+     assert f(2) == 0;
+     assert f(3) == 3;
+}

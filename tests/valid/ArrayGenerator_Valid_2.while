@@ -1,0 +1,22 @@
+int[] abs(int[] ls) {
+    int i = 0;
+    int[] rs = [0; |ls|];
+
+    while(i < |ls|) {
+        if(ls[i] < 0) {
+            rs[i] = -ls[i];
+        } else {
+            rs[i] = ls[i];
+        }
+        i = i + 1;
+    }
+    
+    return rs;
+}
+
+void main() {
+    int[] rs = abs([-1,2,3,-4,5,6,7,23987,-23897,0,-1,1,-2389]);
+    assert rs == [1,2,3,4,5,6,7,23987,23897,0,1,1,2389];
+    rs = abs([]);
+    assert rs == [];
+}

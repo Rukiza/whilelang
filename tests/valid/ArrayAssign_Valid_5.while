@@ -1,0 +1,14 @@
+int[] f() {
+    return [1,2];
+}
+
+void main() {
+     int[] a1 = f();
+     int[] a2 = f();
+     a2[0] = 0;
+     
+     assert 1 == a1[0];
+     assert 2 == a1[1];
+     assert 0 == a2[0];
+     assert 2 == a2[1];
+}

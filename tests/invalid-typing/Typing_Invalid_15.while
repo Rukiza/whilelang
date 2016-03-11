@@ -1,0 +1,4 @@
+int f(int[] xs) {
+    xs[0] = false;
+    return xs[0];
+}

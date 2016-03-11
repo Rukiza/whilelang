@@ -1,0 +1,3 @@
+int f(int x, bool y) {
+    return x + y;
+}

@@ -1,0 +1,10 @@
+macro ADD(x,y) is x+y
+
+int f(int y) {
+    return ADD(y,2*y);
+}
+
+void main() {
+    assert f(1) == 3;
+    assert f(3) == 9;
+}

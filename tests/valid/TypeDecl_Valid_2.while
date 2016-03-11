@@ -1,0 +1,8 @@
+type dr2point is {bool x, bool y}
+
+void main() {
+     dr2point p = {x:false, y:true};
+     assert p.x == false;
+     assert p.y == true;     
+}
+

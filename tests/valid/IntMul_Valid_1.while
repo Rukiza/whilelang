@@ -1,0 +1,7 @@
+void main() {
+     int x = 3;
+     assert (2*3+x) == 9;
+     assert (x+1)*2 == 8;
+     assert x*x == 9;
+     assert -x*2 == -6;
+}

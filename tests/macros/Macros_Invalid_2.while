@@ -1,0 +1,9 @@
+macro EQUAL(x,y) is x==y
+
+int f(int z) {
+    return EQUALS(z,z+1);
+}
+    
+void main() {
+    assert f(1) == 1;
+}

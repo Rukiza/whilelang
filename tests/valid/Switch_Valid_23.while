@@ -1,0 +1,19 @@
+int f({int f} x) {
+  switch(x) {
+    case {f:0}:
+      return 0;
+    case {f:1}:
+      return 1;
+    case {f:2}:
+      return 2;
+  }
+  return 3;
+}
+
+int main() {
+    assert 3 == f({f:-1});
+    assert 0 == f({f:0});
+    assert 1== f({f:1});
+    assert 2 == f({f:2});
+    assert 3 == f({f:3});
+}

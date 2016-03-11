@@ -1,0 +1,13 @@
+int f(int x) {
+    switch(x) {
+        default:
+    }
+    return 10;
+}
+
+void main() {
+    assert 10 == f(123);
+    assert 10 == f(201);
+    assert 10 == f(30);
+    assert 10 == f(-10);
+}

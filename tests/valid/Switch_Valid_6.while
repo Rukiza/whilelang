@@ -1,0 +1,21 @@
+int f(int x) {
+    int y;
+    switch(x) {
+        case 1:
+            y = -1;
+            break;
+        case 2:
+            y = -2;
+            break;
+        default:
+            y = 0;
+    }
+    return y;
+}
+
+void main() {
+    assert -1 == f(1);
+    assert -2 == f(2);
+    assert 0 == f(3);
+    assert 0 == f(-1);
+}

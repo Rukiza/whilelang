@@ -1,0 +1,7 @@
+string f(string s1) {
+     return s1;
+}
+int main() {
+    string s = "Hello World";
+    assert f(s) == s;
+}

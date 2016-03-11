@@ -1,0 +1,17 @@
+string f(int[] xs, int[] ys) {
+    if(xs == ys) {
+        return "EQUAL";
+    } else {
+        return "NOT EQUAL";
+    }
+}
+
+string g(int[] xs, int[] ys) {
+    return f(xs,ys);
+}
+
+void main() {
+    assert g([1,4],[1,4]) == "EQUAL";
+    assert g([1,4],[1,42]) == "NOT EQUAL";
+    assert g([],[]) == "EQUAL";
+}

@@ -1,0 +1,12 @@
+char iof(char[] s, int i) {
+    return s[i];
+}
+
+void main() {
+    char[] cs = ['h','e','l','l','o'];
+    assert 'h' == iof(cs,0);
+    assert 'e' == iof(cs,1);
+    assert 'l' == iof(cs,2);
+    assert 'l' == iof(cs,3);
+    assert 'o' == iof(cs,4);
+}

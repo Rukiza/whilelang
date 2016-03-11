@@ -1,0 +1,19 @@
+int f(string x) {
+  switch(x) {
+    case "ZERO":
+      return 0;
+    case "ONE":
+      return 1;
+    case "TWO":
+      return 2;
+  }
+  return 3;
+}
+
+int main() {
+    assert 3 == f("SOMETHING");
+    assert 0 == f("ZERO");
+    assert 1 == f("ONE");
+    assert 2 == f("TWO");
+    assert 3 == f("THREE");
+}

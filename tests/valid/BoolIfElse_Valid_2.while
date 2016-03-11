@@ -1,0 +1,12 @@
+string f(bool b) {
+    if(b == true) {
+        return "TRUE";
+    } else {
+        return "FALSE";
+    }
+}
+
+void main() {
+    assert "TRUE" == f(true);
+    assert "FALSE" == f(false);
+}

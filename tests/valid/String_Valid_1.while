@@ -1,0 +1,19 @@
+bool has(string str, string[] strings) {
+    int i = 0;
+    while(i < |strings|) {
+        if(strings[i] == str) {
+            return true;
+	} 
+        i = i + 1;
+    }
+    return false;
+}
+
+void main() {
+    string[] ss = ["Hello","World"];
+    assert !has("",ss);
+    assert !has("hello",ss);
+    assert has("Hello",ss);
+    assert !has("Hel",ss);
+    assert !has("blah",ss);
+}

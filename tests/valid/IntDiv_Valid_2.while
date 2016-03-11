@@ -1,0 +1,10 @@
+int f(int x, int y) {
+    return x / y;
+}
+
+void main() {
+     assert f(10,2) == 5;
+     assert f(10,3) == 3;
+     assert f(-10,3) == -3;
+     assert f(1,4) == 0;
+}

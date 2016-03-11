@@ -1,0 +1,12 @@
+string f1(bool x) {
+    return "GOT BOOL";
+}
+
+string f2(int x) {
+    return "GOT INT";
+}
+
+void main() {
+    assert f2(1) == "GOT INT";
+    assert f1(false) == "GOT BOOL";
+}

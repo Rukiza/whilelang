@@ -1,0 +1,14 @@
+type rec1 is { int x }
+type rec2 is { rec1 current }
+
+rec2 f(rec2 r) {
+    r.current.x = 1;
+    return r;
+}
+
+void main() {
+    rec1 r1 = {x : 0};
+    rec2 r2 = { current: r1 };
+    assert r2.current == r1;
+    assert f(r2) == { current: {x:1} };
+}

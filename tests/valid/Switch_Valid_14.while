@@ -1,0 +1,15 @@
+string f(int x) {
+  switch(x) {
+    case 0:
+      return "RED";
+    case 1:
+    default:
+      return "Other";
+  }
+}
+
+int main() {
+    assert "RED" == f(0);
+    assert "Other" == f(1);
+    assert "Other" == f(2);
+}

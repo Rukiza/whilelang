@@ -1,0 +1,12 @@
+bool sign(int x) {
+    if(x >= 0) {
+	if(x == 0) {
+	    return false;
+	} else {
+	    return true;
+	}
+    } else {
+	return false;
+    }
+    return true;
+}
