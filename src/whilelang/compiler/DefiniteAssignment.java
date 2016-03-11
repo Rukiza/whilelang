@@ -209,10 +209,13 @@ public class DefiniteAssignment {
 	}
 
 	/**
+	 * Checks the do-while statements environment for variables that are not
+	 * defined. Manages cases were there is a break partway though the code
+	 * block or at the end or start.
 	 *
-	 * @param stmt
-	 * @param environment
-     * @return
+	 * @param stmt - a DoWhile statement.
+	 * @param environment - A set of defined variables in the environment already.
+     * @return ControlFlow based on the flow of the text inside.
      */
 	public ControlFlow check(Stmt.DoWhile stmt, Defs environment) {
 		Defs nextEnvironment = environment;

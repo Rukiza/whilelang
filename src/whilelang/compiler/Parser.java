@@ -421,6 +421,14 @@ public class Parser {
 		return new Stmt.While(condition, blk, sourceAttr(start, end - 1));
 	}
 
+	/**
+	 * Parse a Do While statement of the form:
+	 * <pre>
+	 *     WhileStmt ::= 'do' StmtBlock 'while' '(' Expr ')' ';'
+	 * </pre>
+	 *
+	 * @return
+     */
 	private Stmt parseDoWhileStmt() {
 		matchKeyword("do");
 		List<Stmt> blk = parseStatementBlock();
