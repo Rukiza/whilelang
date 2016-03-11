@@ -185,6 +185,8 @@ public class Parser {
 			stmt = parseIfStmt();
 		} else if (token.text.equals("while")) {
 			stmt = parseWhileStmt();
+		} else if (token.text.equals("do")){
+			stmt = parseDoWhileStmt();
 		} else if (token.text.equals("for")) {
 			stmt = parseForStmt();
 		} else if (token.text.equals("switch")) {
@@ -417,6 +419,21 @@ public class Parser {
 		int end = index;
 		List<Stmt> blk = parseStatementBlock();
 		return new Stmt.While(condition, blk, sourceAttr(start, end - 1));
+	}
+
+	private Stmt parseDoWhileStmt() {
+		matchKeyword("do");
+		List<Stmt> blk = parseStatementBlock();
+		int start = index;
+		matchKeyword("while");
+		match("(");
+		Expr condition = parseExpr();
+		match(")");
+		match(";");
+		int end = index;
+
+
+		return new Stmt.DoWhile(condition, blk, sourceAttr(start, end - 1));
 	}
 
 	/**

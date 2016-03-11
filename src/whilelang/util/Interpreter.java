@@ -113,6 +113,8 @@ public class Interpreter {
 			return execute((Stmt.For) stmt,frame);
 		} else if(stmt instanceof Stmt.While) {
 			return execute((Stmt.While) stmt,frame);
+		} else if(stmt instanceof Stmt.DoWhile) {
+			return execute((Stmt.DoWhile) stmt,frame);
 		} else if(stmt instanceof Stmt.Switch) {
 			return execute((Stmt.Switch) stmt,frame);
 		} else if(stmt instanceof Stmt.Break) {
@@ -200,6 +202,20 @@ public class Interpreter {
 				return ret;
 			}
 		}
+		return null;
+	}
+
+	private Object execute(Stmt.DoWhile stmt, HashMap<String,Object> frame) {
+		do {
+			Object ret = execute(stmt.getBody(),frame);
+			if(ret == BREAK_CONSTANT) {
+				break;
+			} else if(ret == CONTINUE_CONSTANT) {
+				// continue :)
+			} else if(ret != null) {
+				return ret;
+			}
+		} while((Boolean) execute(stmt.getCondition(),frame));
 		return null;
 	}
 	

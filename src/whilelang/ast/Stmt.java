@@ -317,6 +317,66 @@ public interface Stmt extends SyntacticElement {
 		}
 	}
 
+	public static final class DoWhile extends SyntacticElement.Impl implements Stmt {
+
+		private final Expr condition;
+		private final ArrayList<Stmt> body;
+
+		/**
+		 * Construct a While statement from a given condition and body of
+		 * statements.
+		 *
+		 * @param condition
+		 *            non-null expression.
+		 * @param body
+		 *            non-null collection which contains zero or more
+		 *            statements.
+		 * @param attributes
+		 */
+		public DoWhile(Expr condition, Collection<Stmt> body,
+					 Attribute... attributes) {
+			super(attributes);
+			this.condition = condition;
+			this.body = new ArrayList<Stmt>(body);
+		}
+
+		/**
+		 * Construct a While statement from a given condition and body of
+		 * statements.
+		 *
+		 * @param condition
+		 *            non-null expression.
+		 * @param body
+		 *            non-null collection which contains zero or more
+		 *            statements.
+		 * @param attributes
+		 */
+		public DoWhile(Expr condition, Expr invariant, Collection<Stmt> body,
+					 Collection<Attribute> attributes) {
+			super(attributes);
+			this.condition = condition;
+			this.body = new ArrayList<Stmt>(body);
+		}
+
+		/**
+		 * Get the condition which controls the while loop.
+		 *
+		 * @return Guaranteed to be non-null.
+		 */
+		public Expr getCondition() {
+			return condition;
+		}
+
+		/**
+		 * Get the statements making up the loop body.
+		 *
+		 * @return Guarantted to be non-null.
+		 */
+		public List<Stmt> getBody() {
+			return body;
+		}
+	}
+
 	/**
 	 * Represents a classical for statement made up from a <i>variable
 	 * declaration</i>, a <i>loop condition</i> and an <i>increment

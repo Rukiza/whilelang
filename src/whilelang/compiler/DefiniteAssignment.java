@@ -120,6 +120,8 @@ public class DefiniteAssignment {
 			return check((Stmt.For) stmt, environment);
 		} else if (stmt instanceof Stmt.While) {
 			return check((Stmt.While) stmt, environment);
+		} else if (stmt instanceof Stmt.DoWhile) {
+			return check((Stmt.DoWhile) stmt, environment);
 		} else if (stmt instanceof Stmt.Switch) {
 			return check((Stmt.Switch) stmt, environment);
 		} else {
@@ -204,6 +206,31 @@ public class DefiniteAssignment {
 		check(stmt.getBody(), environment);
 		//
 		return new ControlFlow(environment,null);
+	}
+
+	/**
+	 *
+	 * @param stmt
+	 * @param environment
+     * @return
+     */
+	public ControlFlow check(Stmt.DoWhile stmt, Defs environment) {
+		Defs nextEnvironment = environment;
+		Defs breakEnvironment;
+
+		ControlFlow cf = check(stmt.getBody(), nextEnvironment);
+		breakEnvironment = cf.breakEnvironment;
+		if (breakEnvironment == null) {
+			nextEnvironment = cf.nextEnvironment;
+		}
+		// The next environment will match the break environment
+		else  {
+			nextEnvironment =  breakEnvironment;
+		}
+		//
+		check(stmt.getCondition(), nextEnvironment);
+		//
+		return new ControlFlow(nextEnvironment,breakEnvironment);
 	}
 	
 	public ControlFlow check(Stmt.Switch stmt, Defs environment) {
@@ -411,6 +438,13 @@ public class DefiniteAssignment {
 			}
 			return r;
 		}
+
+//		public Defs (Defs other) {
+//			Defs r = new Defs();
+//			for (String var : variables) {
+//				if
+//			}
+//		}
 		
 		/**
 		 * Useful for debugging
