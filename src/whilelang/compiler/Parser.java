@@ -59,6 +59,8 @@ public class Parser {
 				Keyword k = (Keyword) t;
 				if (t.text.equals("type")) {
 					decls.add(parseTypeDeclaration());
+				} else if (t.text.equals("macro")) {
+					decls.add(parseMacroDeclaration());
 				} else {
 					decls.add(parseMethodDeclaration());
 				}
@@ -129,6 +131,42 @@ public class Parser {
 		match(")");
 		List<Stmt> stmts = parseStatementBlock();
 		return new WhileFile.MethodDecl(name.text, returnType, paramTypes, stmts, sourceAttr(start, index - 1));
+	}
+
+	/**
+	 * Parse a marco decliration, of the form
+	 *
+	 * <pre>
+	 *     MacroDecl ::= 'macro' Ident '(' MacroParameters ')' 'is' Expr
+	 *
+	 *     MacroParameters ::= [Ident (',' Ident)* ]
+	 * </pre>
+	 * @return
+     */
+	private WhileFile.MacroDecl parseMacroDeclaration(){
+		int start = index;
+
+		match("macro");
+		Identifier name = matchIdentifier();
+
+		match("(");
+
+		List<MacroParameter> macroParameters = new ArrayList<MacroParameter>();
+		boolean firstTime = true;
+		while (index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
+			if (!firstTime) {
+				match(",");
+			}
+			firstTime = false;
+			int macroParameterStart = index;
+			Identifier macroParameterName = matchIdentifier();
+			macroParameters.add(new MacroParameter(macroParameterName.text, sourceAttr(macroParameterStart, index -1)));
+		}
+
+		match(")");
+		match("is");
+		Expr expr = parseExpr();
+		return new WhileFile.MacroDecl(name.text, macroParameters, expr, sourceAttr(start, index - 1));
 	}
 
 	/**

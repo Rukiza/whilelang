@@ -182,4 +182,60 @@ public class WhileFile {
 			return name;
 		}
 	}
+
+	public final static class MacroDecl extends SyntacticElement.Impl implements Decl {
+
+		private final String name;
+		private final ArrayList<MacroParameter> parameters;
+		private final Expr expr;
+
+		public MacroDecl(String name, List<MacroParameter> parameters, Expr expr, Attribute... attributes) {
+			super(attributes);
+			this.name = name;
+			this.parameters = new ArrayList<MacroParameter>(parameters);
+			this.expr = expr;
+
+		}
+
+		@Override
+		public String name() {
+			return getName();
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public Expr getExpr() {
+			return expr;
+		}
+
+		public List<MacroParameter> getMacroParameters () {
+			return parameters;
+		}
+
+		public String toString(){
+			return name + " " + expr;
+		}
+
+	}
+
+	public static final class MacroParameter extends SyntacticElement.Impl implements Decl {
+
+		private final String name;
+
+		public MacroParameter (String name, Attribute... attributes){
+			super(attributes);
+			this.name = name;
+		}
+
+		@Override
+		public String name() {
+			return getName();
+		}
+
+		public String getName() {
+			return name;
+		}
+	}
 }

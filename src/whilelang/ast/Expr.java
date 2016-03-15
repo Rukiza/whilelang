@@ -712,5 +712,10 @@ public interface Expr extends SyntacticElement {
 		public List<Expr> getArguments() {
 			return arguments;
 		}
+
+		@Override
+		public String toString() {
+			return "( " + name + ", " + arguments + " )";
+ 		}
 	}
 }
