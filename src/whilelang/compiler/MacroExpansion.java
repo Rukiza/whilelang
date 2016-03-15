@@ -23,6 +23,7 @@ public class MacroExpansion {
         this.file = wf;
         this.methods = new HashMap<String,WhileFile.MethodDecl>();
         this.macros = new HashMap<String, WhileFile.MacroDecl>();
+        List<WhileFile.Decl> decls = new ArrayList<WhileFile.Decl>();
 
         for(WhileFile.Decl declaration : wf.declarations) {
             if(declaration instanceof WhileFile.MethodDecl) {
@@ -34,14 +35,16 @@ public class MacroExpansion {
                     //Todo: Error here for duplicate macro names.
                 }
                 this.macros.put(fd.name(), fd);
+            } else if(declaration instanceof WhileFile.TypeDecl) {
+                decls.add(declaration);
             }
         }
-        List<WhileFile.Decl> decls = new ArrayList<WhileFile.Decl>();
         for(WhileFile.Decl declaration : wf.declarations) {
             if(declaration instanceof WhileFile.MethodDecl) {
                 decls.add(check((WhileFile.MethodDecl) declaration));
             }
         }
+
         return new WhileFile(file.filename, decls);
     }
 
@@ -114,6 +117,9 @@ public class MacroExpansion {
     }
 
     private Stmt.Return check(Stmt.Return stmt, List<String> environment) {
+        if (stmt.getExpr() == null) {
+            return new Stmt.Return(null, stmt.attributes());
+        }
         return new Stmt.Return(check(stmt.getExpr(), environment), stmt.attributes());
     }
 
@@ -122,10 +128,17 @@ public class MacroExpansion {
     }
 
     private Stmt.VariableDeclaration check(Stmt.VariableDeclaration stmt, List<String> environment) {
-        Stmt.VariableDeclaration newStmt = new Stmt.VariableDeclaration(stmt.getType(),
-                stmt.getName(),
-                check(stmt.getExpr(),environment));
-        environment.add(stmt.getName());
+        Stmt.VariableDeclaration newStmt = null;
+        if (stmt.getExpr() == null){
+            newStmt = new Stmt.VariableDeclaration(stmt.getType(),
+                    stmt.getName(),
+                    null);
+        } else {
+             newStmt = new Stmt.VariableDeclaration(stmt.getType(),
+                    stmt.getName(),
+                    check(stmt.getExpr(), environment));
+            environment.add(stmt.getName());
+        }
         return newStmt;
     }
 
