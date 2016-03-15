@@ -53,54 +53,48 @@ public class MacroExpansion {
     }
 
     private WhileFile.MethodDecl check(WhileFile.MethodDecl declaration) {
-        List<String> enviroment = new ArrayList<String>();
-
-        for (WhileFile.Parameter parameter : declaration.getParameters()){
-            enviroment.add(parameter.name());
-        }
-
         return new WhileFile.MethodDecl(declaration.getName(),
                 declaration.getRet(),
                 declaration.getParameters() ,
-                check(declaration.getBody(), enviroment),
+                check(declaration.getBody()),
                 declaration.attributes().toArray(new Attribute[declaration.attributes().size()])) ;
     }
 
-    private List<Stmt> check(List<Stmt> body, List<String> environment) {
+    private List<Stmt> check(List<Stmt> body) {
         List<Stmt> newBody = new ArrayList<Stmt>();
         for (Stmt stmt : body){
-            newBody.add(check(stmt, environment));
+            newBody.add(check(stmt));
         }
         return newBody;
     }
 
-    private Stmt check(Stmt stmt, List<String> environment) {
+    private Stmt check(Stmt stmt) {
         if (stmt instanceof Stmt.Assert) {
-            return check((Stmt.Assert) stmt,environment);
+            return check((Stmt.Assert) stmt);
         } else if (stmt instanceof Stmt.Assign) {
-            return check((Stmt.Assign) stmt, environment);
+            return check((Stmt.Assign) stmt);
         } else if (stmt instanceof Stmt.Return) {
-            return check((Stmt.Return) stmt, environment);
+            return check((Stmt.Return) stmt);
         } else if (stmt instanceof Stmt.Print) {
-            return check((Stmt.Print) stmt, environment);
+            return check((Stmt.Print) stmt);
         } else if(stmt instanceof Stmt.Break) {
             return stmt;// nothing to do
         } else if(stmt instanceof Stmt.Continue) {
             return stmt; // nothing to do
         } else if(stmt instanceof Stmt.VariableDeclaration) {
-            return check((Stmt.VariableDeclaration) stmt, environment);
+            return check((Stmt.VariableDeclaration) stmt);
         } else if(stmt instanceof Expr.Invoke) {
-            return (Stmt) check((Expr.Invoke) stmt, environment);
+            return (Stmt) check((Expr.Invoke) stmt);
         } else if(stmt instanceof Stmt.IfElse) {
-            return check((Stmt.IfElse) stmt, environment);
+            return check((Stmt.IfElse) stmt);
         } else if(stmt instanceof Stmt.For) {
-            return check((Stmt.For) stmt, environment);
+            return check((Stmt.For) stmt);
         } else if(stmt instanceof Stmt.While) {
-            return check((Stmt.While) stmt, environment);
+            return check((Stmt.While) stmt);
         } else if (stmt instanceof  Stmt.DoWhile) {
-            return check((Stmt.DoWhile) stmt, environment);
+            return check((Stmt.DoWhile) stmt);
         } else if(stmt instanceof Stmt.Switch) {
-            return check((Stmt.Switch) stmt, environment);
+            return check((Stmt.Switch) stmt);
         } else {
             internalFailure("unknown statement encountered (" + stmt + ")", file.filename,stmt);
             return null;//Dead code
@@ -108,26 +102,26 @@ public class MacroExpansion {
 
     }
 
-    private Stmt.Assert check(Stmt.Assert stmt, List<String> environment) {
-        return new Stmt.Assert(check(stmt.getExpr(), environment), stmt.attributes());
+    private Stmt.Assert check(Stmt.Assert stmt) {
+        return new Stmt.Assert(check(stmt.getExpr()), stmt.attributes());
     }
 
-    private Stmt.Assign check(Stmt.Assign stmt, List<String> environment) {
-        return new Stmt.Assign(stmt.getLhs(),check(stmt.getRhs(), environment), stmt.attributes());
+    private Stmt.Assign check(Stmt.Assign stmt) {
+        return new Stmt.Assign(stmt.getLhs(),check(stmt.getRhs()), stmt.attributes());
     }
 
-    private Stmt.Return check(Stmt.Return stmt, List<String> environment) {
+    private Stmt.Return check(Stmt.Return stmt) {
         if (stmt.getExpr() == null) {
             return new Stmt.Return(null, stmt.attributes());
         }
-        return new Stmt.Return(check(stmt.getExpr(), environment), stmt.attributes());
+        return new Stmt.Return(check(stmt.getExpr()), stmt.attributes());
     }
 
-    private Stmt.Print check(Stmt.Print stmt, List<String> environment) {
-        return new Stmt.Print(check(stmt.getExpr(), environment), stmt.attributes());
+    private Stmt.Print check(Stmt.Print stmt) {
+        return new Stmt.Print(check(stmt.getExpr()), stmt.attributes());
     }
 
-    private Stmt.VariableDeclaration check(Stmt.VariableDeclaration stmt, List<String> environment) {
+    private Stmt.VariableDeclaration check(Stmt.VariableDeclaration stmt) {
         Stmt.VariableDeclaration newStmt = null;
         if (stmt.getExpr() == null){
             newStmt = new Stmt.VariableDeclaration(stmt.getType(),
@@ -136,79 +130,78 @@ public class MacroExpansion {
         } else {
              newStmt = new Stmt.VariableDeclaration(stmt.getType(),
                     stmt.getName(),
-                    check(stmt.getExpr(), environment));
-            environment.add(stmt.getName());
+                    check(stmt.getExpr()));
         }
         return newStmt;
     }
 
-    private Stmt.IfElse check(Stmt.IfElse stmt, List<String> environment) {
-        return new Stmt.IfElse(check(stmt.getCondition(), environment),
-                check(stmt.getTrueBranch(), environment),
-                check(stmt.getFalseBranch(), environment),
+    private Stmt.IfElse check(Stmt.IfElse stmt) {
+        return new Stmt.IfElse(check(stmt.getCondition()),
+                check(stmt.getTrueBranch()),
+                check(stmt.getFalseBranch()),
                 stmt.attributes());
     }
 
-    private Stmt.For check(Stmt.For stmt, List<String> environment) {
-        return new Stmt.For(check(stmt.getDeclaration(), environment),
-                check(stmt.getCondition(), environment),
-                check(stmt.getIncrement(), environment),
-                check(stmt.getBody(), environment));
+    private Stmt.For check(Stmt.For stmt) {
+        return new Stmt.For(check(stmt.getDeclaration()),
+                check(stmt.getCondition()),
+                check(stmt.getIncrement()),
+                check(stmt.getBody()));
 
     }
 
-    private Stmt.While check(Stmt.While stmt, List<String> environment) {
-        return new Stmt.While(check(stmt.getCondition(), environment),
+    private Stmt.While check(Stmt.While stmt) {
+        return new Stmt.While(check(stmt.getCondition()),
                 null, //Invariant that is not used
-                check(stmt.getBody(), environment),
+                check(stmt.getBody()),
                 stmt.attributes());
     }
 
-    private Stmt.DoWhile check(Stmt.DoWhile stmt, List<String> environment) {
+    private Stmt.DoWhile check(Stmt.DoWhile stmt) {
         return new Stmt.DoWhile(
-                check(stmt.getCondition(), environment),
+                check(stmt.getCondition()),
                 null, //Inverent that is not used
-                check(stmt.getBody(), environment),
+                check(stmt.getBody()),
                 stmt.attributes());
     }
 
-    private Stmt.Switch check(Stmt.Switch stmt, List<String> environment) {
+    private Stmt.Switch check(Stmt.Switch stmt) {
         List<Stmt.Case> cases = new ArrayList<Stmt.Case>();
         for (Stmt.Case c: stmt.getCases()){
-            cases.add(check(c, environment));
+            cases.add(check(c));
         }
-        return new Stmt.Switch(check(stmt.getExpr(), environment),
+        return new Stmt.Switch(check(stmt.getExpr()),
                 cases,
                 stmt.attributes());
     }
 
-    private Stmt.Case check(Stmt.Case stmt, List<String> enviroment) {
+    private Stmt.Case check(Stmt.Case stmt) {
         // Might be a problem with the implementation of switch
         if (stmt.getValue() == null){
-            return new Stmt.Case(null, check(stmt.getBody(), enviroment), stmt.attributes());
+            return new Stmt.Case(null, check(stmt.getBody()), stmt.attributes());
         }
-        return new Stmt.Case((Expr.Constant) check(stmt.getValue(), enviroment), check(stmt.getBody(), enviroment), stmt.attributes());
+        return new Stmt.Case((Expr.Constant) check(stmt.getValue()), check(stmt.getBody()), stmt.attributes());
     }
 
-    private Expr check(Expr expr, List<String> environment) {
+    private Expr check(Expr expr) {
         if(expr instanceof Expr.Binary) {
-            return check((Expr.Binary) expr, environment);
+            return check((Expr.Binary) expr);
         } else if(expr instanceof Expr.Constant) {
             return expr;//Do nothing
         } else if(expr instanceof Expr.IndexOf) {
-            return check((Expr.IndexOf) expr, environment);
+            return check((Expr.IndexOf) expr);
         } else if(expr instanceof Expr.Invoke) {
-            return check((Expr.Invoke) expr, environment);
+            return check((Expr.Invoke) expr);
         } else if(expr instanceof Expr.ArrayGenerator) {
-            return check((Expr.ArrayGenerator) expr, environment);
+            return check((Expr.ArrayGenerator) expr);
         } else if(expr instanceof Expr.ArrayInitialiser) {
-            return check((Expr.ArrayInitialiser) expr, environment);
+            return check((Expr.ArrayInitialiser) expr);
         } else if(expr instanceof Expr.RecordAccess) {
-            return check((Expr.RecordAccess) expr, environment);
+            return check((Expr.RecordAccess) expr);
         } else if(expr instanceof Expr.RecordConstructor) {
-            return check((Expr.RecordConstructor) expr, environment);
+            return check((Expr.RecordConstructor) expr);
         } else if(expr instanceof Expr.Unary) {
-            return check((Expr.Unary) expr, environment);
+            return check((Expr.Unary) expr);
         } else if(expr instanceof Expr.Variable) {
             return expr;//Do nothing
         } else {
@@ -217,7 +210,7 @@ public class MacroExpansion {
         }
     }
 
-    private Expr check(Expr.Invoke expr, List<String> environment) {
+    private Expr check(Expr.Invoke expr) {
         if (methods.containsKey(expr.getName()) && macros.containsKey(expr.getName())) {
             internalFailure("method and macro cross over name spaces (" + expr + ")", file.filename, expr);
         }
@@ -225,7 +218,7 @@ public class MacroExpansion {
             // Check the method for macros
             List<Expr> args = new ArrayList<Expr>();
             for (Expr e: expr.getArguments()) {
-                args.add(check(e, environment));
+                args.add(check(e));
             }
             return new Expr.Invoke(expr.getName(), args, expr.attributes().toArray(new Attribute[expr.attributes().size()]));
         }
@@ -237,7 +230,7 @@ public class MacroExpansion {
             Expr newExpr = factory.makeExpr(macro.getMacroParameters(), expr.getArguments());
 
             //Todo: Deside on if this is done before the replacement of after. Possibly after.
-            return check(newExpr, environment);
+            return check(newExpr);
 
         }
         else {
@@ -247,51 +240,51 @@ public class MacroExpansion {
         return null;// Dead code.
     }
 
-    private Expr.Binary check(Expr.Binary expr, List<String> environment) {
+    private Expr.Binary check(Expr.Binary expr) {
         return new Expr.Binary(expr.getOp(),
-                check(expr.getLhs(), environment),
-                check(expr.getRhs(),environment),
+                check(expr.getLhs()),
+                check(expr.getRhs()),
                 expr.attributes());
     }
 
-    private Expr.IndexOf check(Expr.IndexOf expr, List<String> environment) {
-        return new Expr.IndexOf(check(expr.getSource(), environment),
-                check(expr.getIndex(),environment),
+    private Expr.IndexOf check(Expr.IndexOf expr) {
+        return new Expr.IndexOf(check(expr.getSource()),
+                check(expr.getIndex()),
                 expr.attributes());
     }
 
-    private Expr.ArrayGenerator check(Expr.ArrayGenerator expr, List<String> environment) {
-        return new Expr.ArrayGenerator(check(expr.getValue(), environment),
-                check(expr.getSize(),environment),
+    private Expr.ArrayGenerator check(Expr.ArrayGenerator expr) {
+        return new Expr.ArrayGenerator(check(expr.getValue()),
+                check(expr.getSize()),
                 expr.attributes().toArray(new Attribute[expr.attributes().size()]));
     }
 
-    private Expr.ArrayInitialiser check(Expr.ArrayInitialiser expr, List<String> environment) {
+    private Expr.ArrayInitialiser check(Expr.ArrayInitialiser expr) {
         List<Expr> args = new ArrayList<Expr>();
         for (Expr e: expr.getArguments()){
-            args.add(check(e, environment));
+            args.add(check(e));
         }
         return new Expr.ArrayInitialiser(args, expr.attributes().toArray(new Attribute[expr.attributes().size()]));
     }
 
-    private Expr.RecordAccess check(Expr.RecordAccess expr, List<String> environment) {
-        return new Expr.RecordAccess(check(expr.getSource(),
-                environment), expr.getName(),
+    private Expr.RecordAccess check(Expr.RecordAccess expr) {
+        return new Expr.RecordAccess(check(expr.getSource()),
+                expr.getName(),
                 expr.attributes().toArray(new Attribute[expr.attributes().size()]));
     }
 
-    private Expr.RecordConstructor check(Expr.RecordConstructor expr, List<String> environment) {
+    private Expr.RecordConstructor check(Expr.RecordConstructor expr) {
         List<Pair<String, Expr>> arguments = expr.getFields();
         List<Pair<String, Expr>> newArgs = new ArrayList<Pair<String, Expr>>();
         for (Pair<String, Expr> p : arguments) {
-            newArgs.add(new Pair<String, Expr>(p.first(),check(p.second(), environment)));
+            newArgs.add(new Pair<String, Expr>(p.first(),check(p.second())));
         }
         return new Expr.RecordConstructor(newArgs, expr.attributes().toArray(new Attribute[expr.attributes().size()]));
     }
 
-    private Expr.Unary check(Expr.Unary expr, List<String> environment) {
+    private Expr.Unary check(Expr.Unary expr) {
         return new Expr.Unary(expr.getOp(),
-                check(expr.getExpr(), environment),
+                check(expr.getExpr()),
                 expr.attributes().toArray(new Attribute[expr.attributes().size()]));
     }
 

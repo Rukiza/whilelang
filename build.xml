@@ -6,7 +6,7 @@
   <!-- ============================================== -->
 
   <target name="build">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath=""> 
+    <javac debug="true" debuglevel="vars,lines,source" source="1.8" includeantruntime="true" classpath="">
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="whilelang/testing/**"/> /home/brewershan/SWEN430/whilelang-v0.2
