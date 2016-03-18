@@ -32,7 +32,7 @@ public class MacroExpansion {
             } else if(declaration instanceof WhileFile.MacroDecl) {
                 WhileFile.MacroDecl fd = (WhileFile.MacroDecl) declaration;
                 if (macros.containsKey(fd.getName())) {
-                    //Todo: Error here for duplicate macro names.
+                    internalFailure("macro declared already (" + declaration + ")", file.filename,declaration);
                 }
                 this.macros.put(fd.name(), fd);
             } else if(declaration instanceof WhileFile.TypeDecl) {
@@ -42,14 +42,103 @@ public class MacroExpansion {
         for(WhileFile.Decl declaration : wf.declarations) {
             if(declaration instanceof WhileFile.MethodDecl) {
                 decls.add(check((WhileFile.MethodDecl) declaration));
+            } else if (declaration instanceof WhileFile.MacroDecl){
+                checkValid((WhileFile.MacroDecl) declaration);
             }
         }
 
         return new WhileFile(file.filename, decls);
     }
 
-    private void check() {
-        //Todo: Method and Macro declaration matching check. - if needed.
+    private void checkValid(WhileFile.MacroDecl declaration) {
+        if (methods.containsKey(declaration.getName())){
+            internalFailure("method declared already (" + declaration + ")", file.filename,declaration);
+        }
+        //Todo: Check the expression for recursion and other shit.
+        checkValid(declaration.getExpr(), declaration.getMacroParameters(), declaration.getName());
+    }
+
+    private void checkValid(Expr expr, List<WhileFile.MacroParameter> params, String name) {
+        if(expr instanceof Expr.Binary) {
+            checkValid((Expr.Binary) expr, params, name);
+        } else if(expr instanceof Expr.Constant) {
+            //Do nothing
+        } else if(expr instanceof Expr.IndexOf) {
+            checkValid((Expr.IndexOf) expr, params, name);
+        } else if(expr instanceof Expr.Invoke) {
+            checkValid((Expr.Invoke) expr, params, name);
+        } else if(expr instanceof Expr.ArrayGenerator) {
+            checkValid((Expr.ArrayGenerator) expr, params, name);
+        } else if(expr instanceof Expr.ArrayInitialiser) {
+            checkValid((Expr.ArrayInitialiser) expr, params, name);
+        } else if(expr instanceof Expr.RecordAccess) {
+            checkValid((Expr.RecordAccess) expr, params, name);
+        } else if(expr instanceof Expr.RecordConstructor) {
+            checkValid((Expr.RecordConstructor) expr, params, name);
+        } else if(expr instanceof Expr.Unary) {
+            checkValid((Expr.Unary) expr, params, name);
+        } else if(expr instanceof Expr.Variable) {
+            checkValid((Expr.Variable) expr, params, name);//important one.
+        } else {
+            internalFailure("unknown expression encountered (" + expr + ")", file.filename,expr);
+        }
+    }
+
+    private void checkValid(Expr.Invoke expr, List<WhileFile.MacroParameter> params, String name) {
+        if (expr.getName().equals(name)) {
+            internalFailure("macro cant call itself (" + expr + ")", file.filename,expr);
+        }
+        for (Expr e: expr.getArguments()){
+            checkValid(e, params, name);
+        }
+    }
+
+    private void checkValid(Expr.Binary expr, List<WhileFile.MacroParameter> params, String name) {
+        checkValid(expr.getLhs(), params, name);
+        checkValid(expr.getRhs(), params, name);
+    }
+
+    private void checkValid(Expr.IndexOf expr, List<WhileFile.MacroParameter> params, String name) {
+        checkValid(expr.getIndex(), params, name);
+        checkValid(expr.getSource(), params, name);
+    }
+
+    private void checkValid(Expr.ArrayGenerator expr, List<WhileFile.MacroParameter> params, String name) {
+        checkValid(expr.getSize(), params, name);
+        checkValid(expr.getValue(), params, name);
+    }
+
+    private void checkValid(Expr.ArrayInitialiser expr, List<WhileFile.MacroParameter> params, String name) {
+        for (Expr e: expr.getArguments()){
+            checkValid(e, params, name);
+        }
+        checkValid(expr, params, name);
+    }
+
+    private void checkValid(Expr.RecordAccess expr, List<WhileFile.MacroParameter> params, String name) {
+        checkValid(expr.getSource(), params, name);
+    }
+
+    private void checkValid(Expr.RecordConstructor expr, List<WhileFile.MacroParameter> params, String name) {
+        for (Pair<String, Expr> pair: expr.getFields()){
+            checkValid(pair.second(), params, name);
+        }
+    }
+
+    private void checkValid(Expr.Unary expr, List<WhileFile.MacroParameter> params, String name) {
+        checkValid(expr.getExpr(), params, name);
+    }
+
+    private void checkValid(Expr.Variable expr, List<WhileFile.MacroParameter> params, String name) {
+        boolean matched = false;
+        for (WhileFile.MacroParameter parm: params){
+            if (parm.getName().equals(expr.getName())){
+                matched = true;
+            }
+        }
+        if (!matched) {
+            internalFailure("unknown variable encountered (" + expr + ")", file.filename,expr);
+        }
     }
 
     private WhileFile.MethodDecl check(WhileFile.MethodDecl declaration) {
@@ -225,11 +314,11 @@ public class MacroExpansion {
         else if (macros.containsKey(expr.getName())) {
             WhileFile.MacroDecl macro = macros.get(expr.getName());
 
-            //Todo: variable replacement and macro replacement.
+            //variable replacement has been handled by the factory.
             ExprFactory factory = new ExprFactory(macro.getExpr());
             Expr newExpr = factory.makeExpr(macro.getMacroParameters(), expr.getArguments());
 
-            //Todo: Deside on if this is done before the replacement of after. Possibly after.
+            //Has been decided to check the tree after the expansion of the macro.
             return check(newExpr);
 
         }

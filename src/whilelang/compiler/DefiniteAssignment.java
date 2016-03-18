@@ -155,7 +155,7 @@ public class DefiniteAssignment {
 	public ControlFlow check(Stmt.Continue stmt, Defs environment) {
 		// Here we can just treat a continue in the same way as a return
 		// statement. It makes no real difference.
-		return new ControlFlow(null,null);		
+		return new ControlFlow(null,environment);
 	}
 	
 	public ControlFlow check(Stmt.Print stmt, Defs environment) {
