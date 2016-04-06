@@ -1,0 +1,15 @@
+type msgType1 is {int header, int[] payload}
+type msgType2 is {int header, bool[] payload}
+type msgType is msgType1 | msgType2
+
+int getHeader(msgType m) {
+    {int header} f = ({int header}) m;
+    return f.header;
+}
+    
+void main() {
+    msgType1 m1 = {header: 1, payload: [1,1,0]};
+    msgType2 m2 = {header: 2, payload: [true,true,false]};    
+    assert getHeader(m1) == 1;
+    assert getHeader(m2) == 2;
+}

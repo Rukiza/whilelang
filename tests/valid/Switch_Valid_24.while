@@ -10,7 +10,7 @@ int f(string x) {
   return 3;
 }
 
-int main() {
+void main() {
     assert 3 == f("SOMETHING");
     assert 0 == f("ZERO");
     assert 1 == f("ONE");

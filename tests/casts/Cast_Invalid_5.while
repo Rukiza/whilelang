@@ -1,0 +1,3 @@
+int|null f(int|bool x) {
+    return (int|null) x;
+}

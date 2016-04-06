@@ -6,7 +6,7 @@ int f(int x) {
   return x + 1;
 }
 
-int main() {
+void main() {
     assert 0 == f(0);
     assert 2 == f(1);
     assert 3 == f(2);    

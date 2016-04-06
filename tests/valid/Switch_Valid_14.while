@@ -8,7 +8,7 @@ string f(int x) {
   }
 }
 
-int main() {
+void main() {
     assert "RED" == f(0);
     assert "Other" == f(1);
     assert "Other" == f(2);

@@ -1,4 +1,5 @@
 int f(int x) {
+    int y;
     while(y > 0) {
         x = x + 1;
     }

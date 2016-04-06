@@ -1,0 +1,13 @@
+type msgType is {int|int[] payload}
+
+int|int[] getPayload(msgType m) {
+   return m.payload;
+}
+
+void main() {
+     msgType m1 = { payload: 1 };
+     msgType m2 = { payload: [1,2,3] };
+     //
+     assert getPayload(m1) == 1;
+     assert getPayload(m2) == [1,2,3];
+}

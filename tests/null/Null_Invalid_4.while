@@ -1,0 +1,4 @@
+null[] f(null[] xs, int i, int v) {
+       xs[i] = v;
+       return xs;
+}

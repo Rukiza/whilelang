@@ -1,4 +1,5 @@
 int f(int x) {
+    int y;
     bool c = y > 0;
     if(c) {
         x = x + 1;

@@ -1,0 +1,19 @@
+// Return lowest index of matching item, or false if none
+int|null indexOf(int[] items, int value) {
+    int i = 0;
+    while(i < |items|) {
+        if(items[i] == value) {
+            return i;
+        }
+        i = i + 1;
+    }
+    // item not found
+    return null;
+}
+
+void main() {
+     assert indexOf([1,2,3],1) == 0;
+     assert indexOf([1,2,3],2) == 1;
+     assert indexOf([1,2,3],3) == 2;
+     assert indexOf([1,2,3],4) == null;
+}

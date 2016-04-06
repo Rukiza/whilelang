@@ -120,8 +120,6 @@ public class DefiniteAssignment {
 			return check((Stmt.For) stmt, environment);
 		} else if (stmt instanceof Stmt.While) {
 			return check((Stmt.While) stmt, environment);
-		} else if (stmt instanceof Stmt.DoWhile) {
-			return check((Stmt.DoWhile) stmt, environment);
 		} else if (stmt instanceof Stmt.Switch) {
 			return check((Stmt.Switch) stmt, environment);
 		} else {
@@ -155,7 +153,7 @@ public class DefiniteAssignment {
 	public ControlFlow check(Stmt.Continue stmt, Defs environment) {
 		// Here we can just treat a continue in the same way as a return
 		// statement. It makes no real difference.
-		return new ControlFlow(null,environment);
+		return new ControlFlow(null,null);		
 	}
 	
 	public ControlFlow check(Stmt.Print stmt, Defs environment) {
@@ -206,34 +204,6 @@ public class DefiniteAssignment {
 		check(stmt.getBody(), environment);
 		//
 		return new ControlFlow(environment,null);
-	}
-
-	/**
-	 * Checks the do-while statements environment for variables that are not
-	 * defined. Manages cases were there is a break partway though the code
-	 * block or at the end or start.
-	 *
-	 * @param stmt - a DoWhile statement.
-	 * @param environment - A set of defined variables in the environment already.
-     * @return ControlFlow based on the flow of the text inside.
-     */
-	public ControlFlow check(Stmt.DoWhile stmt, Defs environment) {
-		Defs nextEnvironment = environment;
-		Defs breakEnvironment;
-
-		ControlFlow cf = check(stmt.getBody(), nextEnvironment);
-		breakEnvironment = cf.breakEnvironment;
-		if (breakEnvironment == null) {
-			nextEnvironment = cf.nextEnvironment;
-		}
-		// The next environment will match the break environment
-		else  {
-			nextEnvironment =  breakEnvironment;
-		}
-		//
-		check(stmt.getCondition(), nextEnvironment);
-		//
-		return new ControlFlow(nextEnvironment,breakEnvironment);
 	}
 	
 	public ControlFlow check(Stmt.Switch stmt, Defs environment) {
@@ -441,13 +411,6 @@ public class DefiniteAssignment {
 			}
 			return r;
 		}
-
-//		public Defs (Defs other) {
-//			Defs r = new Defs();
-//			for (String var : variables) {
-//				if
-//			}
-//		}
 		
 		/**
 		 * Useful for debugging

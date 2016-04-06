@@ -1,0 +1,5 @@
+type nint is int
+    
+void main() {
+    int x = (nint) 1;
+}

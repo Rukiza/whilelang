@@ -1,0 +1,13 @@
+bool equal(int|null i, int n) {
+    if(i != null && ((int)i) == n) {
+	return true;
+    } else {
+	return false;
+    }
+}
+
+void main() {
+    assert !equal(1,5);
+    assert equal(11,11);
+    assert !equal(null,11);        
+}

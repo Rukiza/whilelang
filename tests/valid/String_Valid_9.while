@@ -1,5 +1,5 @@
 
-int main() {
+void main() {
     string s1 = "Hello World";
     {string f} r1 = {f:s1};
     assert r1 == {f:"Hello World"};

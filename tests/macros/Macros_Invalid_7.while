@@ -1,5 +1,0 @@
-macro ADD(x, x) is x + x
-
-void main() {
-    assert ADD(1,3) == 4;
-}

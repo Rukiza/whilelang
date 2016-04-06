@@ -1,0 +1,13 @@
+bool isInteger(int|null x) {
+    if(x != null) {
+      return true;
+    } else {
+      return false;
+    }
+}
+
+void main() {
+    assert isInteger(1);
+    assert !isInteger(null);    
+}
+

@@ -3,5 +3,6 @@ bool g(bool x) {
 }
 
 bool f() {
+    bool x;
     return g(x);
 }

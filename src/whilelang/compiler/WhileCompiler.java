@@ -44,9 +44,6 @@ public class WhileCompiler {
 		Parser parser = new Parser(srcFile.getPath(), lexer.scan());
 		WhileFile ast = parser.read();
 
-		//New
-		ast = new MacroExpansion().check(ast);
-
 		// Second, type checking
 		new TypeChecker().check(ast);
 

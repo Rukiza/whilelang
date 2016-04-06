@@ -1,0 +1,13 @@
+void nop() {
+     // doesn't do anything!
+}
+
+int id(int x) {
+    nop();
+    return x;
+}
+
+void test() {
+     assert id(1) == 1;
+     assert id(-1) == -1;
+}

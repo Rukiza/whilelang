@@ -1,0 +1,14 @@
+{int f} strip({int f, int g} msg) {
+    return msg;
+}
+
+{int f, int g} unstrip({int f} x) {
+    // Should fail here
+    return ({int f, int g}) x;
+}
+
+void main() {
+    {int f, int g} m = {f: 1, g: 2};
+    //
+    assert unstrip(strip(m)) == {f: 1, g: 2};
+}

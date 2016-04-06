@@ -1,0 +1,8 @@
+int|int f(int x) {
+    return x;
+}
+
+void main() {
+    assert f(1) == 1;
+}
+

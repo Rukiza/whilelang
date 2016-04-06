@@ -1,4 +1,5 @@
 int f(int x) {
+    int y;
     {int f} rs = {f:y};
     return rs.f;
 }

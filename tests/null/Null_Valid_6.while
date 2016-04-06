@@ -1,0 +1,7 @@
+null get(null[] rs, int i) {
+  return rs[i];
+}
+
+void main() {
+    assert get([null],0) == null;
+}

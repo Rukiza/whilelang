@@ -1,0 +1,7 @@
+null id(null x) {
+  return x;
+}
+
+void main() {
+    assert id(null) == null;
+}

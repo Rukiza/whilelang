@@ -1,6 +1,6 @@
 string f(string x) { return x; }
 
-int main() {
+void main() {
     string s1 = "Hello World";
     string s2 = f(s1);
     assert s2 == s1;

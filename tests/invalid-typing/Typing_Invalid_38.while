@@ -1,0 +1,3 @@
+void f(int rec) {
+     rec[0] = 1;
+}

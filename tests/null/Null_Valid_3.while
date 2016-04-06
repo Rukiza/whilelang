@@ -1,0 +1,8 @@
+bool eq(null x, null y) {
+  return x == y;
+}
+
+
+void main() {
+    assert eq(null,null);
+}

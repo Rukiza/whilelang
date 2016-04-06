@@ -1,0 +1,7 @@
+bool neq(null x, null y) {
+  return x != y;
+}
+
+void main() {
+    assert !neq(null,null);
+}

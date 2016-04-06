@@ -10,7 +10,7 @@ string f(char x) {
   return "";
 }
 
-int main() {
+void main() {
     assert "RED" == f('r');
     assert "GREEN" == f('g');
     assert "BLUE" == f('b');

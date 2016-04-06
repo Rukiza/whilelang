@@ -1,0 +1,9 @@
+int f(int i) {
+    return i;
+}
+
+void main() {
+    int|null x = 1;
+    int y = (int) x;
+    assert f(y) == 1;
+}

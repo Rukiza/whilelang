@@ -1,15 +1,15 @@
 <project name="whilelang" default="jarfile">  
-  <property name="version" value="0.2"/>
+  <property name="version" value="0.3"/>
 
   <!-- ============================================== -->
   <!-- Build Commands -->
   <!-- ============================================== -->
 
   <target name="build">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.8" includeantruntime="true" classpath="">
+    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath=""> 
       <src path="src"/>
       <include name="*/**"/>
-      <exclude name="whilelang/testing/**"/> /home/brewershan/SWEN430/whilelang-v0.2
+      <exclude name="whilelang/testing/**"/> 
       <exclude name="*/**/package-info.java"/> 
     </javac>
   </target>

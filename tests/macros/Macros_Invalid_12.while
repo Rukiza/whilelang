@@ -1,8 +1,0 @@
-macro ADD(x) is x + y
-
-void main() {
-    assert 1 == ADD(1);
-}
-
-
-

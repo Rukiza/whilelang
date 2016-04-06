@@ -1,0 +1,3 @@
+void f({int field} rec) {
+     rec.aField = 1;
+}

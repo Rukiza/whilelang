@@ -1,9 +1,0 @@
-void main() {
-  bool b;
-  do {
-    b = true;
-    continue;
-  } while (false);
-  assert b;
-}
-

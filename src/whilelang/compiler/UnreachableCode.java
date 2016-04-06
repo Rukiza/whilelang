@@ -25,6 +25,7 @@ import java.util.List;
 
 import whilelang.ast.Expr;
 import whilelang.ast.Stmt;
+import whilelang.ast.Type;
 import whilelang.ast.WhileFile;
 import whilelang.util.SyntacticElement;
 
@@ -51,7 +52,10 @@ public class UnreachableCode {
 
 	public void check(WhileFile.MethodDecl fd) {
 		// Check all statements in the method body
-		check(fd.getBody());
+		ControlFlow cf = check(fd.getBody());
+		if(cf == ControlFlow.NEXT) {
+			checkIsVoid(fd.getRet(),fd.getRet());
+		}
 	}
 
 	/**
@@ -101,8 +105,6 @@ public class UnreachableCode {
 			return check((Stmt.For) stmt);
 		} else if (stmt instanceof Stmt.While) {
 			return check((Stmt.While) stmt);
-		} else if (stmt instanceof Stmt.DoWhile) {
-			return check((Stmt.DoWhile) stmt);
 		} else if (stmt instanceof Stmt.Switch) {
 			return check((Stmt.Switch) stmt);
 		} else {
@@ -149,11 +151,6 @@ public class UnreachableCode {
 		check(stmt.getBody());
 		return ControlFlow.NEXT;		
 	}
-
-	public ControlFlow check(Stmt.DoWhile stmt) {
-		check(stmt.getBody());
-		return ControlFlow.NEXT;
-	}
 	
 	/**
 	 * Soundly combine two control flow markers together.
@@ -184,4 +181,19 @@ public class UnreachableCode {
 	}
 	
 	private enum ControlFlow { NEXT, RETURN, BREAK, BREAKNEXT };
+	
+	/**
+	 * Check that the return type is equivalent to void
+	 * 
+	 * @param t
+	 * @param elem
+	 */
+	private void checkIsVoid(Type t, SyntacticElement elem) {
+		if(t instanceof Type.Void) {
+			return;
+		} else {
+			syntaxError("missing return statement",file.filename,elem);
+		}
+		
+	}
 }

@@ -1,0 +1,18 @@
+type msgType1 is {int[] payload}
+type msgType2 is {int header, int[] payload}
+type msgType is msgType1 | msgType2
+
+msgType createWithoutHeader(int[] payload) {
+    return { payload: payload };
+}
+
+msgType createWithHeader(int header, int[] payload) {
+    return { header: header, payload: payload };
+}
+
+
+void main() {
+     assert createWithoutHeader([1,2,3]) == {payload: [1,2,3]};
+     assert createWithHeader(123,[1,2,3]) == {header: 123, payload: [1,2,3]};     
+}
+

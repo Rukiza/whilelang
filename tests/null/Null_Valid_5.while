@@ -1,0 +1,12 @@
+type Rec is {
+  int x,
+  null y
+}
+
+null f(Rec r) {
+  return r.y;
+}
+
+void main() {
+    assert f({x:1, y: null}) == null;
+}

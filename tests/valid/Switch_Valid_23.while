@@ -10,7 +10,7 @@ int f({int f} x) {
   return 3;
 }
 
-int main() {
+void main() {
     assert 3 == f({f:-1});
     assert 0 == f({f:0});
     assert 1== f({f:1});

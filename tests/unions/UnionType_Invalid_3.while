@@ -1,0 +1,3 @@
+int|null f() {
+    return false;
+}

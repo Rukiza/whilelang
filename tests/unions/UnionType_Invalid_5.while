@@ -1,0 +1,5 @@
+type Rec is {int|null field}
+
+Rec f() {
+    return {field: false};
+}

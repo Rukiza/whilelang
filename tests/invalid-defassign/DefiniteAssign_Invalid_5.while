@@ -1,4 +1,5 @@
 int f(int x) {
+    int y;
     for(int i=y; i < x; i=i+1) {
         x = x + 1;
     }

@@ -1,0 +1,3 @@
+bool f(int|{bool f} msg) {
+    return msg.f;
+}

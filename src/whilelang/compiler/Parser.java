@@ -35,12 +35,14 @@ public class Parser {
 
 	private String filename;
 	private ArrayList<Token> tokens;
+	private HashMap<String,WhileFile.MethodDecl> userDefinedMethods;
 	private HashSet<String> userDefinedTypes;
 	private int index;
 
 	public Parser(String filename, List<Token> tokens) {
 		this.filename = filename;
 		this.tokens = new ArrayList<Token>(tokens);
+		this.userDefinedMethods = new HashMap<String,WhileFile.MethodDecl>();
 		this.userDefinedTypes = new HashSet<String>();
 	}
 
@@ -59,8 +61,6 @@ public class Parser {
 				Keyword k = (Keyword) t;
 				if (t.text.equals("type")) {
 					decls.add(parseTypeDeclaration());
-				} else if (t.text.equals("macro")) {
-					decls.add(parseMacroDeclaration());
 				} else {
 					decls.add(parseMethodDeclaration());
 				}
@@ -86,7 +86,9 @@ public class Parser {
 		matchKeyword("type");
 
 		Identifier name = matchIdentifier();
-
+		if(userDefinedTypes.contains(name.text)) {
+			syntaxError("type already declared",name);
+		} 
 		matchKeyword("is");
 
 		Type t = parseType();
@@ -111,11 +113,15 @@ public class Parser {
 
 		Type returnType = parseType();
 		Identifier name = matchIdentifier();
+		if(userDefinedMethods.containsKey(name.text)) {
+			syntaxError("method already declared",name);
+		} 
 
+		Context context = new Context();
 		match("(");
 
 		// Now build up the parameter types
-		List<Parameter> paramTypes = new ArrayList<Parameter>();
+		List<Parameter> parameters = new ArrayList<Parameter>();
 		boolean firstTime = true;
 		while (index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
 			if (!firstTime) {
@@ -125,48 +131,20 @@ public class Parser {
 			int parameterStart = index;
 			Type parameterType = parseType();
 			Identifier parameterName = matchIdentifier();
-			paramTypes.add(new Parameter(parameterType, parameterName.text, sourceAttr(parameterStart, index - 1)));
-		}
-
-		match(")");
-		List<Stmt> stmts = parseStatementBlock();
-		return new WhileFile.MethodDecl(name.text, returnType, paramTypes, stmts, sourceAttr(start, index - 1));
-	}
-
-	/**
-	 * Parse a marco decliration, of the form
-	 *
-	 * <pre>
-	 *     MacroDecl ::= 'macro' Ident '(' MacroParameters ')' 'is' Expr
-	 *
-	 *     MacroParameters ::= [Ident (',' Ident)* ]
-	 * </pre>
-	 * @return
-     */
-	private WhileFile.MacroDecl parseMacroDeclaration(){
-		int start = index;
-
-		match("macro");
-		Identifier name = matchIdentifier();
-
-		match("(");
-
-		List<MacroParameter> macroParameters = new ArrayList<MacroParameter>();
-		boolean firstTime = true;
-		while (index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
-			if (!firstTime) {
-				match(",");
+			if(context.isDeclared(parameterName.text)) {
+				syntaxError("parameter " + parameterName.text + " already declared",parameterName);
+			} else {
+				context.declare(parameterName.text);
 			}
-			firstTime = false;
-			int macroParameterStart = index;
-			Identifier macroParameterName = matchIdentifier();
-			macroParameters.add(new MacroParameter(macroParameterName.text, sourceAttr(macroParameterStart, index -1)));
+			parameters.add(new Parameter(parameterType, parameterName.text, sourceAttr(parameterStart, index - 1)));
+			
 		}
 
 		match(")");
-		match("is");
-		Expr expr = parseExpr();
-		return new WhileFile.MacroDecl(name.text, macroParameters, expr, sourceAttr(start, index - 1));
+		List<Stmt> stmts = parseStatementBlock(context);
+		WhileFile.MethodDecl m = new WhileFile.MethodDecl(name.text, returnType, parameters, stmts, sourceAttr(start, index - 1));
+		userDefinedMethods.put(name.text,m);
+		return m;
 	}
 
 	/**
@@ -178,12 +156,12 @@ public class Parser {
 	 * 
 	 * @return
 	 */
-	private List<Stmt> parseStatementBlock() {
+	private List<Stmt> parseStatementBlock(Context context) {
 		match("{");
 
 		ArrayList<Stmt> stmts = new ArrayList<Stmt>();
 		while (index < tokens.size() && !(tokens.get(index) instanceof RightCurly)) {
-			stmts.add(parseStatement(true));
+			stmts.add(parseStatement(true,context));
 		}
 
 		match("}");
@@ -200,61 +178,59 @@ public class Parser {
 	 *            cases (e.g. for-loops) we don't want to match semi-colons.
 	 * @return
 	 */
-	private Stmt parseStatement(boolean withSemiColon) {
+	private Stmt parseStatement(boolean withSemiColon, Context context) {
 		checkNotEof();
 		Token token = tokens.get(index);
 		Stmt stmt;
 		if (token.text.equals("assert")) {
-			stmt = parseAssertStmt();
+			stmt = parseAssertStmt(context);
 			if (withSemiColon) {
 				match(";");
 			}
 		} else if (token.text.equals("return")) {
-			stmt = parseReturnStmt();
+			stmt = parseReturnStmt(context);
 			if (withSemiColon) {
 				match(";");
 			}
 		} else if (token.text.equals("print")) {
-			stmt = parsePrintStmt();
+			stmt = parsePrintStmt(context);
 			if (withSemiColon) {
 				match(";");
 			}
 		} else if (token.text.equals("if")) {
-			stmt = parseIfStmt();
+			stmt = parseIfStmt(context);
 		} else if (token.text.equals("while")) {
-			stmt = parseWhileStmt();
-		} else if (token.text.equals("do")){
-			stmt = parseDoWhileStmt();
+			stmt = parseWhileStmt(context);
 		} else if (token.text.equals("for")) {
-			stmt = parseForStmt();
+			stmt = parseForStmt(context);
 		} else if (token.text.equals("switch")) {
-			stmt = parseSwitchStmt();
+			stmt = parseSwitchStmt(context);
 		} else if (token.text.equals("break")) {
-			stmt = parseBreakStmt();
+			stmt = parseBreakStmt(context);
 			if (withSemiColon) { match(";"); }
 		} else if (token.text.equals("continue")) {
-			stmt = parseContinueStmt();
+			stmt = parseContinueStmt(context);
 			if (withSemiColon) { match(";"); }
 		} else if ((index + 1) < tokens.size() && tokens.get(index + 1) instanceof LeftBrace) {
 			// must be a method invocation
-			stmt = parseInvokeExprOrStmt();
+			stmt = parseInvokeExprOrStmt(context);
 			if (withSemiColon) {
 				match(";");
 			}
 		} else if (isTypeAhead(index)) {
-			stmt = parseVariableDeclaration();
+			stmt = parseVariableDeclaration(context);
 			if (withSemiColon) {
 				match(";");
 			}
 		} else {
 			// invocation or assignment
 			int start = index;
-			Expr t = parseExpr();
+			Expr t = parseExpr(context);
 			if (t instanceof Expr.Invoke) {
 				stmt = (Expr.Invoke) t;
 			} else {
 				index = start;
-				stmt = parseAssignStmt();
+				stmt = parseAssignStmt(context);
 			}
 			if (withSemiColon) {
 				match(";");
@@ -300,11 +276,11 @@ public class Parser {
 	 * 
 	 * @return
 	 */
-	private Stmt.Assert parseAssertStmt() {
+	private Stmt.Assert parseAssertStmt(Context context) {
 		int start = index;
 		// Every return statement begins with the return keyword!
 		matchKeyword("assert");
-		Expr e = parseExpr();
+		Expr e = parseExpr(context);
 		// Done.
 		return new Stmt.Assert(e, sourceAttr(start, index - 1));
 	}
@@ -322,15 +298,15 @@ public class Parser {
 	 * 
 	 * @return
 	 */
-	private Stmt parseAssignStmt() {
+	private Stmt parseAssignStmt(Context context) {
 		// standard assignment
 		int start = index;
-		Expr lhs = parseExpr();
+		Expr lhs = parseExpr(context);
 		if (!(lhs instanceof Expr.LVal)) {
 			syntaxError("expecting lval, found " + lhs + ".", lhs);
 		}
 		match("=");
-		Expr rhs = parseExpr();
+		Expr rhs = parseExpr(context);
 		int end = index;
 		return new Stmt.Assign((Expr.LVal) lhs, rhs, sourceAttr(start, end - 1));
 	}
@@ -344,11 +320,11 @@ public class Parser {
 	 * 
 	 * @return
 	 */
-	private Stmt.Print parsePrintStmt() {
+	private Stmt.Print parsePrintStmt(Context context) {
 		int start = index;
 		matchKeyword("print");
 		checkNotEof();
-		Expr e = parseExpr();
+		Expr e = parseExpr(context);
 		int end = index;
 		return new Stmt.Print(e, sourceAttr(start, end - 1));
 	}
@@ -362,18 +338,23 @@ public class Parser {
 	 * 
 	 * @return
 	 */
-	private Stmt.VariableDeclaration parseVariableDeclaration() {
+	private Stmt.VariableDeclaration parseVariableDeclaration(Context context) {
 		int start = index;
 		// Every variable declaration consists of a declared type and variable
 		// name.
 		Type type = parseType();
 		Identifier id = matchIdentifier();
+		if(context.isDeclared(id.text)) {
+			syntaxError("variable " + id.text + " alread declared",id);
+		} else {
+			context.declare(id.text);
+		}
 		// A variable declaration may optionally be assigned an initialiser
 		// expression.
 		Expr initialiser = null;
 		if (index < tokens.size() && tokens.get(index) instanceof Equals) {
 			match("=");
-			initialiser = parseExpr();
+			initialiser = parseExpr(context);
 		}
 		// Done.
 		return new Stmt.VariableDeclaration(type, id.text, initialiser, sourceAttr(start, index - 1));
@@ -392,25 +373,25 @@ public class Parser {
 	 * 
 	 * @return
 	 */
-	private Stmt parseIfStmt() {
+	private Stmt parseIfStmt(Context context) {
 		int start = index;
 		matchKeyword("if");
 		match("(");
-		Expr c = parseExpr();
+		Expr c = parseExpr(context);
 		match(")");
 		int end = index;
-		List<Stmt> tblk = parseStatementBlock();
+		List<Stmt> tblk = parseStatementBlock(context.clone());
 		List<Stmt> fblk = Collections.emptyList();
 
 		if ((index + 1) < tokens.size() && tokens.get(index).text.equals("else")) {
 			matchKeyword("else");
 
 			if (index < tokens.size() && tokens.get(index).text.equals("if")) {
-				Stmt if2 = parseIfStmt();
+				Stmt if2 = parseIfStmt(context);
 				fblk = new ArrayList<Stmt>();
 				fblk.add(if2);
 			} else {
-				fblk = parseStatementBlock();
+				fblk = parseStatementBlock(context.clone());
 			}
 		}
 
@@ -426,14 +407,14 @@ public class Parser {
 	 * 
 	 * @return
 	 */
-	private Stmt.Return parseReturnStmt() {
+	private Stmt.Return parseReturnStmt(Context context) {
 		int start = index;
 		// Every return statement begins with the return keyword!
 		matchKeyword("return");
 		Expr e = null;
 		// A return statement may optionally have a return expression.
 		if (index < tokens.size() && !(tokens.get(index) instanceof SemiColon)) {
-			e = parseExpr();
+			e = parseExpr(context);
 		}
 		// Done.
 		return new Stmt.Return(e, sourceAttr(start, index - 1));
@@ -448,38 +429,15 @@ public class Parser {
 	 * 
 	 * @return
 	 */
-	private Stmt parseWhileStmt() {
+	private Stmt parseWhileStmt(Context context) {
 		int start = index;
 		matchKeyword("while");
 		match("(");
-		Expr condition = parseExpr();
+		Expr condition = parseExpr(context);
 		match(")");
 		int end = index;
-		List<Stmt> blk = parseStatementBlock();
+		List<Stmt> blk = parseStatementBlock(context.setInLoop().clone());
 		return new Stmt.While(condition, blk, sourceAttr(start, end - 1));
-	}
-
-	/**
-	 * Parse a Do While statement of the form:
-	 * <pre>
-	 *     WhileStmt ::= 'do' StmtBlock 'while' '(' Expr ')' ';'
-	 * </pre>
-	 *
-	 * @return
-     */
-	private Stmt parseDoWhileStmt() {
-		matchKeyword("do");
-		List<Stmt> blk = parseStatementBlock();
-		int start = index;
-		matchKeyword("while");
-		match("(");
-		Expr condition = parseExpr();
-		match(")");
-		match(";");
-		int end = index;
-
-
-		return new Stmt.DoWhile(condition, blk, sourceAttr(start, end - 1));
 	}
 
 	/**
@@ -491,18 +449,18 @@ public class Parser {
 	 * 
 	 * @return
 	 */
-	private Stmt parseForStmt() {
+	private Stmt parseForStmt(Context context) {
 		int start = index;
 		matchKeyword("for");
 		match("(");
-		Stmt.VariableDeclaration declaration = parseVariableDeclaration();
+		Stmt.VariableDeclaration declaration = parseVariableDeclaration(context);
 		match(";");
-		Expr condition = parseExpr();
+		Expr condition = parseExpr(context);
 		match(";");
-		Stmt increment = parseStatement(false);
+		Stmt increment = parseStatement(false, context);
 		int end = index;
 		match(")");
-		List<Stmt> blk = parseStatementBlock();
+		List<Stmt> blk = parseStatementBlock(context.setInLoop().clone());
 
 		return new Stmt.For(declaration, condition, increment, blk, sourceAttr(start, end - 1));
 	}
@@ -520,29 +478,35 @@ public class Parser {
 	 * 
 	 * @return
 	 */
-	private Stmt parseSwitchStmt() {
+	private Stmt parseSwitchStmt(Context context) {
 		int start = index;
 		matchKeyword("switch");
 		match("(");
-		Expr expr = parseExpr();
+		Expr expr = parseExpr(context);
 		match(")");
 		int end = index;
 		match("{");
-		List<Stmt.Case> cases = parseSwitchCases();
+		List<Stmt.Case> cases = parseSwitchCases(context.setInSwitch());
 		match("}");
 
 		return new Stmt.Switch(expr, cases, sourceAttr(start, end - 1));
 	}
 
-	private Stmt parseBreakStmt() {
+	private Stmt parseBreakStmt(Context context) {
 		int start = index;
-		matchKeyword("break");
+		Keyword k = matchKeyword("break");
+		if(!context.inLoop() && !context.inSwitch()) {
+			syntaxError("break outside switch or loop",k);
+		}
 		return new Stmt.Break(sourceAttr(start, index - 1));
 	}
 	
-	private Stmt parseContinueStmt() {
+	private Stmt parseContinueStmt(Context context) {
 		int start = index;
-		matchKeyword("continue");
+		Keyword k = matchKeyword("continue");
+		if(!context.inLoop()) {
+			syntaxError("continue outside of loop",k);
+		}
 		return new Stmt.Continue(sourceAttr(start, index - 1));
 	}
 	/**
@@ -551,8 +515,10 @@ public class Parser {
 	 * 
 	 * @return
 	 */
-	private List<Stmt.Case> parseSwitchCases() {
-		ArrayList<Stmt.Case> cases = new ArrayList<Stmt.Case>(); 
+	private List<Stmt.Case> parseSwitchCases(Context context) {
+		ArrayList<Stmt.Case> cases = new ArrayList<Stmt.Case>();
+		HashSet<Object> values = new HashSet<Object>();
+		
 		while(index < tokens.size() && !(tokens.get(index) instanceof RightCurly)) {
 			int start = index;
 			Expr.Constant value;
@@ -561,6 +527,11 @@ public class Parser {
 				// This is a case block
 				matchKeyword("case");
 				value = parseConstant();
+				if(values.contains(value.getValue())) {
+					syntaxError("duplicate case",value);
+				} else {
+					values.add(value.getValue());
+				}
 				match(":");
 			} else {
 				// This must be a default block
@@ -573,7 +544,7 @@ public class Parser {
 			ArrayList<Stmt> body = new ArrayList<Stmt>();
 			while (index < tokens.size() && !(tokens.get(index) instanceof RightCurly)
 					&& !(tokens.get(index).text.equals("case")) && !(tokens.get(index).text.equals("default"))) {
-				body.add(parseStatement(true));
+				body.add(parseStatement(true, context));
 			}
 			cases.add(new Stmt.Case(value, body, sourceAttr(start,end-1)));
 		}
@@ -581,7 +552,7 @@ public class Parser {
 	}
 
 	private Expr.Constant parseConstant() {
-		Expr e = parseExpr();
+		Expr e = parseExpr(new Context());
 		Object constant = parseConstant(e);
 		return new Expr.Constant(constant,e.attributes());
 	}
@@ -610,105 +581,105 @@ public class Parser {
 		}				
 	}
 	
-	private Expr parseExpr() {
+	private Expr parseExpr(Context context) {
 		checkNotEof();
 		int start = index;
-		Expr c1 = parseRelationalExpr();
+		Expr c1 = parseRelationalExpr(context);
 		if (index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {
 			match("&&");
-			Expr c2 = parseExpr();
+			Expr c2 = parseExpr(context);
 			return new Expr.Binary(Expr.BOp.AND, c1, c2, sourceAttr(start, index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LogicalOr) {
 			match("||");
-			Expr c2 = parseExpr();
+			Expr c2 = parseExpr(context);
 			return new Expr.Binary(Expr.BOp.OR, c1, c2, sourceAttr(start, index - 1));
 		}
 		return c1;
 	}
 
-	private Expr parseRelationalExpr() {
+	private Expr parseRelationalExpr(Context context) {
 		int start = index;
 
-		Expr lhs = parseAdditiveExpr();
+		Expr lhs = parseAdditiveExpr(context);
 
 		if (index < tokens.size() && tokens.get(index) instanceof LessEquals) {
 			match("<=");
-			Expr rhs = parseAdditiveExpr();
+			Expr rhs = parseAdditiveExpr(context);
 			return new Expr.Binary(Expr.BOp.LTEQ, lhs, rhs, sourceAttr(start, index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
 			match("<");
-			Expr rhs = parseAdditiveExpr();
+			Expr rhs = parseAdditiveExpr(context);
 			return new Expr.Binary(Expr.BOp.LT, lhs, rhs, sourceAttr(start, index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof GreaterEquals) {
 			match(">=");
-			Expr rhs = parseAdditiveExpr();
+			Expr rhs = parseAdditiveExpr(context);
 			return new Expr.Binary(Expr.BOp.GTEQ, lhs, rhs, sourceAttr(start, index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof RightAngle) {
 			match(">");
-			Expr rhs = parseAdditiveExpr();
+			Expr rhs = parseAdditiveExpr(context);
 			return new Expr.Binary(Expr.BOp.GT, lhs, rhs, sourceAttr(start, index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof EqualsEquals) {
 			match("==");
-			Expr rhs = parseAdditiveExpr();
+			Expr rhs = parseAdditiveExpr(context);
 			return new Expr.Binary(Expr.BOp.EQ, lhs, rhs, sourceAttr(start, index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof NotEquals) {
 			match("!=");
-			Expr rhs = parseAdditiveExpr();
+			Expr rhs = parseAdditiveExpr(context);
 			return new Expr.Binary(Expr.BOp.NEQ, lhs, rhs, sourceAttr(start, index - 1));
 		} else {
 			return lhs;
 		}
 	}
 
-	private Expr parseAdditiveExpr() {
+	private Expr parseAdditiveExpr(Context context) {
 		int start = index;
-		Expr lhs = parseMultplicativeExpr();
+		Expr lhs = parseMultplicativeExpr(context);
 
 		if (index < tokens.size() && tokens.get(index) instanceof Plus) {
 			match("+");
-			Expr rhs = parseAdditiveExpr();
+			Expr rhs = parseAdditiveExpr(context);
 			return new Expr.Binary(Expr.BOp.ADD, lhs, rhs, sourceAttr(start, index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Minus) {
 			match("-");
-			Expr rhs = parseAdditiveExpr();
+			Expr rhs = parseAdditiveExpr(context);
 			return new Expr.Binary(Expr.BOp.SUB, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
 	}
 
-	private Expr parseMultplicativeExpr() {
+	private Expr parseMultplicativeExpr(Context context) {
 		int start = index;
-		Expr lhs = parseIndexTerm();
+		Expr lhs = parseIndexTerm(context);
 
 		if (index < tokens.size() && tokens.get(index) instanceof Star) {
 			match("*");
-			Expr rhs = parseMultplicativeExpr();
+			Expr rhs = parseMultplicativeExpr(context);
 			return new Expr.Binary(Expr.BOp.MUL, lhs, rhs, sourceAttr(start, index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof RightSlash) {
 			match("/");
-			Expr rhs = parseMultplicativeExpr();
+			Expr rhs = parseMultplicativeExpr(context);
 			return new Expr.Binary(Expr.BOp.DIV, lhs, rhs, sourceAttr(start, index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Percent) {
 			match("%");
-			Expr rhs = parseMultplicativeExpr();
+			Expr rhs = parseMultplicativeExpr(context);
 			return new Expr.Binary(Expr.BOp.REM, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
 	}
 
-	private Expr parseIndexTerm() {
+	private Expr parseIndexTerm(Context context) {
 		checkNotEof();
 		int start = index;
-		Expr lhs = parseTerm();
+		Expr lhs = parseTerm(context);
 
 		Token lookahead = tokens.get(index);
 
 		while (lookahead instanceof LeftSquare || lookahead instanceof Dot || lookahead instanceof LeftBrace) {
 			if (lookahead instanceof LeftSquare) {
 				match("[");
-				Expr rhs = parseAdditiveExpr();
+				Expr rhs = parseAdditiveExpr(context);
 				match("]");
 				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start, index - 1));
 			} else {
@@ -726,7 +697,7 @@ public class Parser {
 		return lhs;
 	}
 
-	private Expr parseTerm() {
+	private Expr parseTerm(Context context) {
 		checkNotEof();
 
 		int start = index;
@@ -734,14 +705,14 @@ public class Parser {
 
 		if (token instanceof LeftBrace) {
 			match("(");
-			Expr e = parseExpr();
+			Expr e = parseExpr(context);
 			checkNotEof();
 			match(")");
 			return e;
 		} else if ((index + 1) < tokens.size() && token instanceof Identifier
 				&& tokens.get(index + 1) instanceof LeftBrace) {
 			// must be a method invocation
-			return parseInvokeExprOrStmt();
+			return parseInvokeExprOrStmt(context);
 		} else if (token.text.equals("null")) {
 			matchKeyword("null");
 			return new Expr.Constant(null, sourceAttr(start, index - 1));
@@ -752,7 +723,7 @@ public class Parser {
 			matchKeyword("false");
 			return new Expr.Constant(false, sourceAttr(start, index - 1));
 		} else if (token instanceof Identifier) {
-			return new Expr.Variable(matchIdentifier().text, sourceAttr(start, index - 1));
+			return parseVariable(context);			
 		} else if (token instanceof Lexer.Char) {
 			char val = match(Lexer.Char.class, "a character").value;
 			return new Expr.Constant(new Character(val), sourceAttr(start, index - 1));
@@ -762,22 +733,33 @@ public class Parser {
 		} else if (token instanceof Strung) {
 			return parseString();
 		} else if (token instanceof Minus) {
-			return parseNegationExpr();
+			return parseNegationExpr(context);
 		} else if (token instanceof Bar) {
-			return parseArrayLengthExpr();
+			return parseArrayLengthExpr(context);
 		} else if (token instanceof LeftSquare) {
-			return parseArrayInitialiserOrGeneratorExpr();
+			return parseArrayInitialiserOrGeneratorExpr(context);
 		} else if (token instanceof LeftCurly) {
-			return parseRecordInitialiserExpr();
+			return parseRecordInitialiserExpr(context);
 		} else if (token instanceof Shreak) {
 			match("!");
-			return new Expr.Unary(Expr.UOp.NOT, parseTerm(), sourceAttr(start, index - 1));
+			return new Expr.Unary(Expr.UOp.NOT, parseTerm(context), sourceAttr(start, index - 1));
 		}
 		syntaxError("unrecognised term (\"" + token.text + "\")", token);
 		return null;
 	}
 
-	private Expr parseArrayInitialiserOrGeneratorExpr() {
+	private Expr parseVariable(Context context) {
+		int start = index;
+		Identifier var = matchIdentifier();
+		if(context.isDeclared(var.text)) {
+			return new Expr.Variable(var.text, sourceAttr(start, index - 1));
+		} else {
+			syntaxError("unknown variable " + var.text, var);
+			return null;
+		}
+	}
+	
+	private Expr parseArrayInitialiserOrGeneratorExpr(Context context) {
 		int start = index;
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		match("[");
@@ -785,13 +767,13 @@ public class Parser {
 		Token token = tokens.get(index);
 		// Check for array generator expression
 		if (!(token instanceof RightSquare)) {
-			exprs.add(parseExpr());
+			exprs.add(parseExpr(context));
 			checkNotEof();
 			token = tokens.get(index);
 			if (token instanceof SemiColon) {
 				// Array generator
 				match(";");
-				exprs.add(parseExpr());
+				exprs.add(parseExpr(context));
 				checkNotEof();
 				match("]");
 				return new Expr.ArrayGenerator(exprs.get(0), exprs.get(1), sourceAttr(start, index - 1));
@@ -799,7 +781,7 @@ public class Parser {
 				// Array initialiser
 				while (!(token instanceof RightSquare)) {
 					match(",");
-					exprs.add(parseExpr());
+					exprs.add(parseExpr(context));
 					checkNotEof();
 					token = tokens.get(index);
 				}
@@ -810,7 +792,7 @@ public class Parser {
 		return new Expr.ArrayInitialiser(exprs, sourceAttr(start, index - 1));
 	}
 
-	private Expr parseRecordInitialiserExpr() {
+	private Expr parseRecordInitialiserExpr(Context context) {
 		int start = index;
 		match("{");
 		HashSet<String> keys = new HashSet<String>();
@@ -834,7 +816,7 @@ public class Parser {
 
 			match(":");
 
-			Expr e = parseExpr();
+			Expr e = parseExpr(context);
 			exprs.add(new Pair<String, Expr>(n.text, e));
 			keys.add(n.text);
 			checkNotEof();
@@ -844,18 +826,18 @@ public class Parser {
 		return new Expr.RecordConstructor(exprs, sourceAttr(start, index - 1));
 	}
 
-	private Expr parseArrayLengthExpr() {
+	private Expr parseArrayLengthExpr(Context context) {
 		int start = index;
 		match("|");
-		Expr e = parseIndexTerm();
+		Expr e = parseIndexTerm(context);
 		match("|");
 		return new Expr.Unary(Expr.UOp.LENGTHOF, e, sourceAttr(start, index - 1));
 	}
 
-	private Expr parseNegationExpr() {
+	private Expr parseNegationExpr(Context context) {
 		int start = index;
 		match("-");
-		Expr e = parseIndexTerm();
+		Expr e = parseIndexTerm(context);
 
 		if (e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
@@ -868,9 +850,12 @@ public class Parser {
 		return new Expr.Unary(Expr.UOp.NEG, e, sourceAttr(start, index));
 	}
 
-	private Expr.Invoke parseInvokeExprOrStmt() {
+	private Expr.Invoke parseInvokeExprOrStmt(Context context) {
 		int start = index;
 		Identifier name = matchIdentifier();
+		if(!userDefinedMethods.containsKey(name.text)) {
+			syntaxError("unknown method " + name.text + "()",name);
+		}
 		match("(");
 		boolean firstTime = true;
 		ArrayList<Expr> args = new ArrayList<Expr>();
@@ -880,12 +865,19 @@ public class Parser {
 			} else {
 				firstTime = false;
 			}
-			Expr e = parseExpr();
+			Expr e = parseExpr(context);
 
 			args.add(e);
 		}
 		match(")");
-		return new Expr.Invoke(name.text, args, sourceAttr(start, index - 1));
+		WhileFile.MethodDecl m = userDefinedMethods.get(name.text);		
+		Expr.Invoke invoke = new Expr.Invoke(name.text, args, sourceAttr(start, index - 1));
+		
+		if(m.getParameters().size() != args.size()) {
+			syntaxError("incorrect number of arguments provided",invoke);
+		}
+		
+		return invoke;
 	}
 
 	private Expr parseString() {
@@ -938,7 +930,12 @@ public class Parser {
 			return parseRecordType();
 		} else {
 			Identifier id = matchIdentifier();
-			return new Type.Named(id.text, sourceAttr(start, index - 1));
+			if(userDefinedTypes.contains(id.text)) {
+				return new Type.Named(id.text, sourceAttr(start, index - 1));
+			} else {
+				syntaxError("unknown type " + id.text,id);
+				return null;
+			}
 		}
 	}
 
@@ -1051,5 +1048,100 @@ public class Parser {
 
 	private void syntaxError(String msg, Token t) {
 		throw new SyntaxError(msg, filename, t.start, t.start + t.text.length() - 1);
+	}
+	
+	/**
+	 * Provides information about the current context in which the parser is
+	 * operating.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	private static class Context {
+		/**
+		 * indicates whether the current context is within a loop or not.
+		 */
+		private final boolean inLoop;
+		
+		/**
+		 * indicates whether the current context is within a switch or not.
+		 */
+		private final boolean inSwitch;
+		
+		/**
+		 * indicates the set of declared variables within the current context; 
+		 */
+		private final Set<String> environment;
+		
+		public Context() {
+			this.inLoop = false;
+			this.inSwitch = false;
+			this.environment = new HashSet<String>();
+		}
+		
+		private Context(boolean inLoop, boolean inSwitch, Set<String> environment) {
+			this.inLoop = inLoop;
+			this.inSwitch = inSwitch;
+			this.environment = environment;
+		}
+		
+		/**
+		 * Check whether the given context is within an enclosing loop or not.
+		 * 
+		 * @return
+		 */
+		public boolean inLoop() {
+			return inLoop;
+		}
+		
+		/**
+		 * Check whether the given context is within an enclosing switch or not.
+		 * 
+		 * @return
+		 */
+		public boolean inSwitch() {
+			return inSwitch;
+		}
+		
+		/**
+		 * Check whether a given variable is declared in this context or not.
+		 * 
+		 * @param variable
+		 * @return
+		 */
+		public boolean isDeclared(String variable) {
+			return environment.contains(variable);
+		}
+		
+		public void declare(String variable) {
+			environment.add(variable);
+		}
+		
+		/**
+		 * Create a copy of this context which is enclosed within a loop
+		 * statement.
+		 * 
+		 * @return
+		 */
+		public Context setInLoop() {
+			return new Context(true,inSwitch,environment);
+		}
+		
+		/**
+		 * Create a copy of this context which is enclosed within a switch
+		 * statement.
+		 * 
+		 * @return
+		 */
+		public Context setInSwitch() {
+			return new Context(inLoop,true,environment);
+		}
+		
+		/**
+		 * Create a new clone of this context
+		 */
+		public Context clone() {
+			return new Context(inLoop,inSwitch,new HashSet<String>(environment));
+		}
 	}
 }

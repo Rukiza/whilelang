@@ -1,0 +1,8 @@
+null Null() {
+  return null;
+}
+
+
+void main() {
+    assert Null() == null;
+}

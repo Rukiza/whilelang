@@ -1,0 +1,13 @@
+int f({int f}|null i) {
+    if(i == null) {
+	return 0;
+    } else {
+	return (({int f})i).f;
+    }
+}
+
+void main() {
+    assert f({f:1}) == 1;
+    assert f({f:2}) == 2;
+    assert f(null) == 0;
+}

@@ -17,7 +17,7 @@ string f(int x, int y) {
   return "";
 }
 
-int main() {
+void main() {
     int Red = 0;
     int Blue = 1;
     int Green = 2;

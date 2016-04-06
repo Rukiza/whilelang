@@ -8,7 +8,7 @@ int f(bool x) {
  return 3; // dead code
 }
 
-int main() {
+void main() {
     assert 0 == f(true);
     assert 1 == f(false);
 }

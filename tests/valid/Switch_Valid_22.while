@@ -15,7 +15,7 @@ int f(int x) {
   return x;
 }
 
-int main() {
+void main() {
     assert 0 == f(0);
     assert 0 == f(1);
     assert 1 == f(2);

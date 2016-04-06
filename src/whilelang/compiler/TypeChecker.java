@@ -63,10 +63,16 @@ public class TypeChecker {
 		}
 		
 		for(WhileFile.Decl declaration : wf.declarations) {
-			if(declaration instanceof WhileFile.MethodDecl) {
+			if(declaration instanceof WhileFile.TypeDecl) {
+				check((WhileFile.TypeDecl) declaration);
+			} else if(declaration instanceof WhileFile.MethodDecl) {
 				check((WhileFile.MethodDecl) declaration);
 			}
 		}
+	}
+	
+	public void check(WhileFile.TypeDecl td) {
+		checkNotVoid(td.getType(),td.getType());
 	}
 	
 	public void check(WhileFile.MethodDecl fd) {
@@ -75,6 +81,7 @@ public class TypeChecker {
 		// First, initialise the typing environment
 		HashMap<String,Type> environment = new HashMap<String,Type>();
 		for (WhileFile.Parameter p : fd.getParameters()) {
+			checkNotVoid(p.getType(),p);
 			environment.put(p.name(), p.getType());
 		}
 		
@@ -104,15 +111,13 @@ public class TypeChecker {
 		} else if(stmt instanceof Stmt.VariableDeclaration) {
 			check((Stmt.VariableDeclaration) stmt, environment);
 		} else if(stmt instanceof Expr.Invoke) {
-			check((Expr.Invoke) stmt, environment);
+			check((Expr.Invoke) stmt, false, environment);
 		} else if(stmt instanceof Stmt.IfElse) {
 			check((Stmt.IfElse) stmt, environment);
 		} else if(stmt instanceof Stmt.For) {
 			check((Stmt.For) stmt, environment);
 		} else if(stmt instanceof Stmt.While) {
 			check((Stmt.While) stmt, environment);
-		} else if (stmt instanceof  Stmt.DoWhile) {
-			check((Stmt.DoWhile) stmt, environment);
 		} else if(stmt instanceof Stmt.Switch) {
 			check((Stmt.Switch) stmt, environment);
 		} else {
@@ -193,14 +198,7 @@ public class TypeChecker {
 		checkInstanceOf(ct,stmt.getCondition(),Type.Bool.class);
 		check(stmt.getBody(),environment);
 	}
-
-	public void check(Stmt.DoWhile stmt, Map<String,Type> environment) {
-		Type ct = check(stmt.getCondition(),environment);
-		// Make sure condition has bool type
-		checkInstanceOf(ct,stmt.getCondition(),Type.Bool.class);
-		check(stmt.getBody(),environment);
-	}
-
+	
 	public void check(Stmt.Switch stmt, Map<String,Type> environment) {
 		Type ct = check(stmt.getExpr(),environment);
 		// Now, check each case individually
@@ -223,7 +221,7 @@ public class TypeChecker {
 		} else if(expr instanceof Expr.IndexOf) {
 			type = check((Expr.IndexOf) expr, environment);
 		} else if(expr instanceof Expr.Invoke) {
-			type = check((Expr.Invoke) expr, environment);
+			type = check((Expr.Invoke) expr, true, environment);
 		} else if(expr instanceof Expr.ArrayGenerator) {
 			type = check((Expr.ArrayGenerator) expr, environment);
 		} else if(expr instanceof Expr.ArrayInitialiser) {
@@ -302,7 +300,7 @@ public class TypeChecker {
 		return ((Type.Array) srcType).getElement();
 	}
 	
-	public Type check(Expr.Invoke expr, Map<String,Type> environment) {
+	public Type check(Expr.Invoke expr, boolean returnRequired, Map<String,Type> environment) {
 		WhileFile.MethodDecl fn = methods.get(expr.getName());
 		List<Expr> arguments = expr.getArguments();
 		List<WhileFile.Parameter> parameters = fn.getParameters();
@@ -316,7 +314,11 @@ public class TypeChecker {
 			// Check supplied argument is subtype of declared parameter
 			checkSubtype(parameter,argument,arguments.get(i));
 		}
-		return fn.getRet();
+		Type returnType = fn.getRet();
+		if(returnRequired) {
+			checkNotVoid(returnType,fn.getRet());
+		}
+		return returnType;
 	}
 	
 	public Type check(Expr.ArrayGenerator expr, Map<String, Type> environment) {
@@ -614,5 +616,26 @@ public class TypeChecker {
 	 */
 	public boolean equivalent(Type t1, Type t2, SyntacticElement element) {
 		return isSubtype(t1,t2,element) && isSubtype(t2,t1,element);
-	}		
+	}
+	
+	/**
+	 * Check that a given type is not equivalent to void. This is because void
+	 * cannot be used in certain situations.
+	 * 
+	 * @param t
+	 * @param elemt
+	 */
+	public void checkNotVoid(Type t, SyntacticElement elem) {
+		if(t instanceof Type.Void) {
+			syntaxError("void type not permitted here",file.filename,elem);
+		} else if(t instanceof Type.Record) {
+			Type.Record r = (Type.Record) t;
+			for(Pair<Type,String> field : r.getFields()) {
+				checkNotVoid(field.first(),field.first());
+			}
+		} else if(t instanceof Type.Array) {
+			Type.Array at = (Type.Array) t;
+			checkNotVoid(at.getElement(),at.getElement());
+		}
+	}
 }

@@ -291,7 +291,7 @@ public interface Stmt extends SyntacticElement {
 		 *            statements.
 		 * @param attributes
 		 */
-		public While(Expr condition, Expr invariant, Collection<Stmt> body,
+		public While(Expr condition, Collection<Stmt> body,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.condition = condition;
@@ -311,88 +311,6 @@ public interface Stmt extends SyntacticElement {
 		 * Get the statements making up the loop body.
 		 * 
 		 * @return Guarantted to be non-null.
-		 */
-		public List<Stmt> getBody() {
-			return body;
-		}
-	}
-
-	/**
-	 * Represents a do-while statement whose body is made up from a block of
-	 * statements separated by curly braces. Note that, unlike C or Java, the
-	 * body must be contained within curly braces. Differing from a while
-	 * statement variables in the curly braces are considered decently assigned
-	 * in this case.As an example:
-	 *
-	 * <pre>
-	 * int sum([int] xs) {
-	 *   int r = 0;
-	 *   int i = 0;
-	 *   do {
-	 *     r = r + xs[i];
-	 *     i = i + 1;
-	 *   } while(i < |xs|);
-	 *   return r;
-	 * }
-	 * </pre>
-	 *
-	 * @author Shane Brewer
-	 *
-	 */
-	public static final class DoWhile extends SyntacticElement.Impl implements Stmt {
-
-		private final Expr condition;
-		private final ArrayList<Stmt> body;
-
-		/**
-		 * Construct a While statement from a given condition and body of
-		 * statements.
-		 *
-		 * @param condition
-		 *            non-null expression.
-		 * @param body
-		 *            non-null collection which contains zero or more
-		 *            statements.
-		 * @param attributes
-		 */
-		public DoWhile(Expr condition, Collection<Stmt> body,
-					 Attribute... attributes) {
-			super(attributes);
-			this.condition = condition;
-			this.body = new ArrayList<Stmt>(body);
-		}
-
-		/**
-		 * Construct a DoWhile statement from a given condition and body of
-		 * statements.
-		 *
-		 * @param condition
-		 *            non-null expression.
-		 * @param body
-		 *            non-null collection which contains zero or more
-		 *            statements.
-		 * @param attributes
-		 */
-		public DoWhile(Expr condition, Expr invariant, Collection<Stmt> body,
-					 Collection<Attribute> attributes) {
-			super(attributes);
-			this.condition = condition;
-			this.body = new ArrayList<Stmt>(body);
-		}
-
-		/**
-		 * Get the condition which controls the do-while loop.
-		 *
-		 * @return Guaranteed to be non-null.
-		 */
-		public Expr getCondition() {
-			return condition;
-		}
-
-		/**
-		 * Get the statements making up the loop body.
-		 *
-		 * @return Guaranteed to be non-null.
 		 */
 		public List<Stmt> getBody() {
 			return body;

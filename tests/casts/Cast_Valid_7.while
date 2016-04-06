@@ -1,0 +1,12 @@
+int[] f(int|null i, int n) {
+    if(i == null) {
+	return [0;n];
+    } else {
+	return [(int)i; n];
+    }
+}
+
+void main() {
+    assert f(1,5) == [1,1,1,1,1];
+    assert f(null,3) == [0,0,0];
+}

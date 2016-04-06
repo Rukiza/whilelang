@@ -1,5 +1,5 @@
 
-int main() {
+void main() {
     string s1 = "Hello";
     string s2 = "World";
     assert s1 != s2;
