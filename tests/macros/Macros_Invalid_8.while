@@ -1,0 +1,6 @@
+macro INC(x) is x + 1
+macro INC(x) is x + 2
+
+void main() {
+    assert INC(0) == 1;
+}

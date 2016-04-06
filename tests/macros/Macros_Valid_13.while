@@ -1,0 +1,8 @@
+macro tricky(x,y) is x + y
+
+void main() {
+    int number = 5 * tricky(0, 1);
+    assert(number == 5);
+    assert(number != 1);
+}
+

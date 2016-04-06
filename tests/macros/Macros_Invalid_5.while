@@ -1,0 +1,14 @@
+macro EQUAL(x,y) is y - x == z
+
+int f(int z) {
+    if (EQUALS(z,z+1)){
+        return 1;
+    }
+    else {
+        return 2;
+    }
+}
+    
+void main() {
+    assert f(1) == 1;
+}

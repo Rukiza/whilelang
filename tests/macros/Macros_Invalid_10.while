@@ -1,0 +1,8 @@
+macro ONE() is ONE() + 1
+
+void main() {
+    assert ONE() == 1;
+}
+
+
+
