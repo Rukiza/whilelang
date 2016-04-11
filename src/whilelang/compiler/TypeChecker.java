@@ -114,39 +114,54 @@ public class TypeChecker {
 
 	private Type toNormalForm(Type.Record type) {
 		List<Pair<Type, String>> fields = type.getFields();
+		List<Type> types = new ArrayList<>();
 		Map<String, List<Type>> map = new HashMap<>();
 
-
+		int test = 0;
 		for (Pair<Type, String> pair: fields) {
 			if (pair.first() instanceof Type.UnionType) {
 				map.put(pair.second(), ((Type.UnionType) pair.first()).types);
+				test++;
 			} else {
 				List<Type> temp = new ArrayList<>();
 				temp.add(pair.first());
 				map.put(pair.second(), temp);
 			}
 		}
-
-		int size = 1;
-		int amount = 0;
-		for (List<Type> list: map.values()) {
-			size = size * list.size();
-			amount++;
+		if (test == 0) {
+			return type;
 		}
 
 		List<List<Pair<Type, String>>> temp = new ArrayList<>();
-			int a = 0;
-			for (String name: map.keySet()) {
-				for (int l = 0; l < map.get(name).size(); l++) {
-					if ( a == 0) {
-						List<Pair<Type, String>> um = new ArrayList<>();
-						//um.add(new Pair<Type, String>());
-					}
-				}
-				a++;
+		int size = 1;
+		for (List<Type> list: map.values()) {
+			size = size * list.size();
+			for (int i = 0; i < list.size(); i++) {
+				temp.add(new ArrayList<>());
 			}
+		}
+		int i = 0;
+		int somthing = 0;
+		for (String name: map.keySet()) {
+			int mod = temp.size() / map.get(name).size();
+			for (int l = 0; l < map.get(name).size(); l++) {
+				temp.get(i).add(new Pair<>(map.get(name).get(l), name));
+				somthing++;
+				if (somthing >= mod) {
+					i++;
+					somthing = 0;
+				}
+			}
+		}
 
-		return new Type.UnionType(null,
+		for (List<Pair<Type, String>> v: temp){
+			types.add(new Type.Record(v));
+		}
+//		System.out.println(map);
+//		System.out.println(temp);
+//		System.out.println(types);
+
+		return new Type.UnionType(types,
 				type.attributes().toArray(new Attribute[type.attributes().size()]));
 	}
 
@@ -549,7 +564,24 @@ public class TypeChecker {
 				syntaxError("unknown type encountered: " + type, file.filename,
 						element);
 			}
-		} 		
+		}
+		//This works. ..... May need changing.
+		if (type instanceof Type.UnionType) {
+			boolean b = false;
+			for (Type t: ((Type.UnionType) type).types) {
+				for (Class<?> instance: instances) {
+					//if (instance.isInstance(t)) {
+					checkInstanceOf(t, element, instances);
+					//}
+				}
+				for (Class<?> instance: instances) {
+					if(instance.isInstance(t)) {
+						return t;
+					}
+				}
+			}
+			return type;
+		}
 		for (Class<?> instance : instances) {
 			if (instance.isInstance(type)) {
 				// This cast is clearly unsafe. It relies on the caller of this
@@ -568,7 +600,7 @@ public class TypeChecker {
 				msg = msg + " or ";
 			}
 			firstTime=false;
-			
+//			System.out.println(instance.getName());
 			if (instance.getName().endsWith("Bool")) {
 				msg += "bool";
 			} else if (instance.getName().endsWith("Char")) {
