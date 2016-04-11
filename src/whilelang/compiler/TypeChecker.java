@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import whilelang.ast.*;
 import whilelang.util.Pair;
@@ -58,7 +59,7 @@ public class TypeChecker {
 				this.methods.put(fd.name(), fd);
 			} else if(declaration instanceof WhileFile.TypeDecl) {
 				WhileFile.TypeDecl fd = (WhileFile.TypeDecl) declaration;
-				this.types.put(fd.name(), fd);
+				this.types.put(fd.name(), toNormalForm(fd));
 			}
 		}
 		
@@ -70,7 +71,85 @@ public class TypeChecker {
 			}
 		}
 	}
-	
+
+	private WhileFile.TypeDecl toNormalForm(WhileFile.TypeDecl fd) {
+		return new WhileFile.TypeDecl(
+				toNormalForm(fd.getType()),
+				fd.name(),
+				fd.attributes().toArray(new Attribute[fd.attributes().size()]));
+	}
+
+	private Type toNormalForm(Type type) {
+		if (type instanceof Type.Record) {
+			return toNormalForm((Type.Record) type);
+		} else if (type instanceof Type.Void) {
+			return type;
+		} else if (type instanceof Type.UnionType) {
+			return toNormalForm((Type.UnionType) type);
+		} else if (type instanceof Type.Int) {
+			return type;
+		} else if (type instanceof Type.Array) {
+			return type;
+		} else if (type instanceof Type.Bool) {
+			return type;
+		} else if (type instanceof Type.Char) {
+			return type;
+		} else if (type instanceof Type.Strung) {
+			return type;
+		} else if (type instanceof Type.Null) {
+			return type;
+		} else if (type instanceof Type.Named) {
+			return type;
+		}
+		return type;
+	}
+
+	private Type toNormalForm(Type.UnionType type) {
+		List<Type> types = type.types.stream().map(this::toNormalForm).collect(Collectors.toList());
+
+		return new Type.UnionType(
+				types,
+				type.attributes().toArray(new Attribute[type.attributes().size()]));
+	}
+
+	private Type toNormalForm(Type.Record type) {
+		List<Pair<Type, String>> fields = type.getFields();
+		Map<String, List<Type>> map = new HashMap<>();
+
+
+		for (Pair<Type, String> pair: fields) {
+			if (pair.first() instanceof Type.UnionType) {
+				map.put(pair.second(), ((Type.UnionType) pair.first()).types);
+			} else {
+				List<Type> temp = new ArrayList<>();
+				temp.add(pair.first());
+				map.put(pair.second(), temp);
+			}
+		}
+
+		int size = 1;
+		int amount = 0;
+		for (List<Type> list: map.values()) {
+			size = size * list.size();
+			amount++;
+		}
+
+		List<List<Pair<Type, String>>> temp = new ArrayList<>();
+			int a = 0;
+			for (String name: map.keySet()) {
+				for (int l = 0; l < map.get(name).size(); l++) {
+					if ( a == 0) {
+						List<Pair<Type, String>> um = new ArrayList<>();
+						//um.add(new Pair<Type, String>());
+					}
+				}
+				a++;
+			}
+
+		return new Type.UnionType(null,
+				type.attributes().toArray(new Attribute[type.attributes().size()]));
+	}
+
 	public void check(WhileFile.TypeDecl td) {
 		checkNotVoid(td.getType(),td.getType());
 	}
@@ -405,6 +484,8 @@ public class TypeChecker {
 			return new Type.Bool();
 		} else if (constant instanceof Character) {
 			return new Type.Char();
+		} else if (constant == null) {
+			return new Type.Null();
 		} else if (constant instanceof Integer) {
 			return new Type.Int();
 		} else if (constant instanceof String) {
@@ -451,7 +532,6 @@ public class TypeChecker {
 	 * Check that a given type t2 is an instance of of another type t1. This
 	 * method is useful for checking that a type is, for example, a List type.
 	 * 
-	 * @param t1
 	 * @param type
 	 * @param element
 	 *            Used for determining where to report syntax errors.
@@ -540,7 +620,10 @@ public class TypeChecker {
 	 * @param element
 	 *            Used for determining where to report syntax errors.
 	 */
-	public boolean isSubtype(Type t1, Type t2, SyntacticElement element) {		
+	public boolean isSubtype(Type t1, Type t2, SyntacticElement element) {
+//		System.out.println(t1);
+//		System.out.println(t1 instanceof Type.Array);
+//		System.out.println(t2);
 		if (t2 instanceof Type.Void) {
 			// OK			
 			return true;
@@ -556,6 +639,29 @@ public class TypeChecker {
 		} else if (t1 instanceof Type.Strung && t2 instanceof Type.Strung) {
 			// OK
 			return true;
+		} else if (t1 instanceof Type.Null && t2 instanceof Type.Null) {
+			//OK
+			return true;
+		} else if (t2 instanceof Type.UnionType) {
+			boolean b = true;
+			Type.UnionType ut = (Type.UnionType) t2;
+			for (Type t: ut.types) {
+				if (!isSubtype(t1, t, element)){
+					b = false;
+				}
+			}
+			return b;
+		} else if (t1 instanceof Type.UnionType) {
+//			System.out.println("T1 is a union");
+			boolean b = false;
+			Type.UnionType ut = (Type.UnionType) t1;
+			for (Type t: ut.types) {
+				b = isSubtype(t ,t2, element);
+				if (b) {
+					return b;
+				}
+			}
+			return b;
 		} else if (t1 instanceof Type.Array && t2 instanceof Type.Array) {
 			Type.Array l1 = (Type.Array) t1;
 			Type.Array l2 = (Type.Array) t2;
@@ -582,15 +688,6 @@ public class TypeChecker {
 					}
 				}
 				return true;
-			}		
-		} else if (t1 instanceof Type.Named) {
-			Type.Named tn = (Type.Named) t1;
-			if (types.containsKey(tn.getName())) {
-				Type body = types.get(tn.getName()).getType();
-				return isSubtype(body, t2, element);
-			} else {
-				syntaxError("unknown type encountered: " + t1, file.filename,
-						element);
 			}
 		} else if (t2 instanceof Type.Named) {
 			Type.Named tn = (Type.Named) t2;
@@ -601,8 +698,17 @@ public class TypeChecker {
 				syntaxError("unknown type encountered: " + t2, file.filename,
 						element);
 			}
-		} 		
-		return false;		
+		} else if (t1 instanceof Type.Named) {
+			Type.Named tn = (Type.Named) t1;
+			if (types.containsKey(tn.getName())) {
+				Type body = types.get(tn.getName()).getType();
+				return isSubtype(body, t2, element);
+			} else {
+				syntaxError("unknown type encountered: " + t1, file.filename,
+						element);
+			}
+		}
+		return false;
 	}
 	
 	/**
@@ -623,7 +729,6 @@ public class TypeChecker {
 	 * cannot be used in certain situations.
 	 * 
 	 * @param t
-	 * @param elemt
 	 */
 	public void checkNotVoid(Type t, SyntacticElement elem) {
 		if(t instanceof Type.Void) {

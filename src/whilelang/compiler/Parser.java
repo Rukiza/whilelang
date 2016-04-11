@@ -891,6 +891,19 @@ public class Parser {
 		checkNotEof();
 		// Determine base type
 		Type type = parseBaseType();
+		// Parse union types if any
+		if (index < tokens.size() && tokens.get(index) instanceof Bar) {
+//			System.out.println("Should have made it here.");
+			List<Type> types = new ArrayList<>();
+			types.add(type);
+			while (index < tokens.size() && tokens.get(index) instanceof Bar) {
+//				System.out.println("And done this once");
+
+				match("|");
+				types.add(parseType());
+			}
+			type = new Type.UnionType(types, sourceAttr(start, index));
+		}
 		// Determine array level (if any)
 		while (index < tokens.size() && tokens.get(index) instanceof LeftSquare) {
 			match("[");
@@ -925,6 +938,9 @@ public class Parser {
 		} else if (token.text.equals("string")) {
 			matchKeyword("string");
 			return new Type.Strung(sourceAttr(start, index - 1));
+		} else if (token.text.equals("null")) {
+			matchKeyword("null");
+			return new Type.Null(sourceAttr(start, index + 1));
 		} else if (token instanceof LeftCurly) {
 			// record type
 			return parseRecordType();
