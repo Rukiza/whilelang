@@ -705,10 +705,17 @@ public class Parser {
 
 		if (token instanceof LeftBrace) {
 			match("(");
-			Expr e = parseExpr(context);
-			checkNotEof();
-			match(")");
-			return e;
+			if (isTypeAhead(index)) {
+				Type t = parseType();
+				checkNotEof();
+				match(")");
+				return new Expr.Cast(parseExpr(context), t, sourceAttr(start, index));
+			}else {
+				Expr e = parseExpr(context);
+				checkNotEof();
+				match(")");
+				return e;
+			}
 		} else if ((index + 1) < tokens.size() && token instanceof Identifier
 				&& tokens.get(index + 1) instanceof LeftBrace) {
 			// must be a method invocation
