@@ -46,7 +46,8 @@ public class TypeChecker {
 	private WhileFile file;
 	private WhileFile.MethodDecl method;
 	private HashMap<String,WhileFile.MethodDecl> methods;
-	private HashMap<String,WhileFile.TypeDecl> types; 
+	private HashMap<String,WhileFile.TypeDecl> types;
+	public HashMap<String, HashMap<String, Type>> enviro = new HashMap<>();
 	
 	public void check(WhileFile wf) {
 		this.file = wf;
@@ -174,6 +175,8 @@ public class TypeChecker {
 		
 		// First, initialise the typing environment
 		HashMap<String,Type> environment = new HashMap<String,Type>();
+		enviro.put(method.getName(),environment);
+
 		for (WhileFile.Parameter p : fd.getParameters()) {
 			checkNotVoid(p.getType(),p);
 			environment.put(p.name(), p.getType());
@@ -328,6 +331,8 @@ public class TypeChecker {
 			type = check((Expr.Unary) expr, environment);
 		} else if(expr instanceof Expr.Variable) {
 			type = check((Expr.Variable) expr, environment);
+		} else if(expr instanceof Expr.Cast) {
+			type = check((Expr.Cast) expr, environment);
 		} else {
 			internalFailure("unknown expression encountered (" + expr + ")", file.filename,expr);
 			return null; // dead code
@@ -339,7 +344,71 @@ public class TypeChecker {
 		
 		return type;
 	}
-	
+
+	/**
+	 * TODO: Check this is right.
+	 * @param expr
+	 * @param enviroment
+     * @return
+     */
+	public Type check(Expr.Cast expr, Map<String, Type> enviroment) {
+//		System.out.println(expr);
+		Type type = null;
+		if (expr.getTo() instanceof Type.Named) {
+			Type.Named named = (Type.Named) expr.getTo();
+			if (types.containsKey(named.getName())) {
+				Type body = types.get(named.getName()).getType();
+//				System.out.println(named.getName());
+				type = body;
+			} else {
+				internalFailure("unknown expression encountered (" + expr + ")", file.filename, expr);
+				return null;
+			}
+		} else if (expr.getTo() instanceof Type.UnionType) {
+			Type.UnionType union = (Type.UnionType) expr.getTo();
+//			System.out.println(union);
+			Type body = check(expr.getFrom(), enviroment);
+//			System.out.println(body);
+			Type.UnionType ubody = (Type.UnionType) body;
+			for (Type t: union.types) {
+				boolean b = false;
+//				System.out.print("Dogs: "+t);
+				for (Type u: ubody.types) {
+//					System.out.println(" - "+u);
+					if (u.toString().trim().equals(t.toString().trim())){
+//						System.out.println("Cats");
+						b = true;
+					}
+				}
+				if (!b) {
+					internalFailure("unknown expression encountered (" + expr + ")", file.filename, expr);
+				}
+			}
+			type = ubody;
+
+		} else if (expr.getTo() instanceof Type.Record) {
+			type = expr.getTo();
+		} else if (expr.getFrom() instanceof Expr.Variable) {
+			Expr.Variable v = (Expr.Variable) expr.getFrom();
+			System.out.println(v.getName());
+			System.out.println(enviroment.containsKey(v.getName()));
+			System.out.println(enviroment.get(v.getName()));
+//			if (types.containsKey()) {
+//				type = typeOf(types.get(v.getName()), v);
+//				System.out.println(type);
+//			} else {
+				type = expr.getTo();
+//			}
+
+		} else {
+			type = expr.getTo();
+		}
+//		System.out.println(check(expr.getFrom(), enviroment));
+//		System.out.println(expr.getFrom());
+		checkInstanceOf(check(expr.getFrom(),enviroment),expr.getTo(), type.getClass());
+		return expr.getTo();
+	}
+
 	public Type check(Expr.Binary expr, Map<String,Type> environment) {
 		Type leftType = check(expr.getLhs(), environment);
 		Type rightType = check(expr.getRhs(), environment);
@@ -486,6 +555,10 @@ public class TypeChecker {
 		}
 		return type;
 	}
+
+	public Type typeOf(Object conts, SyntacticElement elem, boolean b) {
+		return typeOf(conts, elem);
+	}
 	
 	/**
 	 * Determine the type of a constant value
@@ -526,6 +599,7 @@ public class TypeChecker {
 			}
 			return new Type.Record(fields);
 		} else {
+			System.out.println(constant);
 			internalFailure("unknown constant encountered (" + elem + ")", file.filename, elem);
 			return null; // dead code
 		}
@@ -571,8 +645,15 @@ public class TypeChecker {
 			for (Type t: ((Type.UnionType) type).types) {
 				for (Class<?> instance: instances) {
 					//if (instance.isInstance(t)) {
-					checkInstanceOf(t, element, instances);
-					//}
+					if (element instanceof Type.UnionType) {
+						for (Type l: ((Type.UnionType) type).types){
+							if (instance.isInstance(l)) {
+								checkInstanceOf(t, l, instances);
+							}
+						}
+					} else {
+						checkInstanceOf(t, element, instances);
+					}
 				}
 				for (Class<?> instance: instances) {
 					if(instance.isInstance(t)) {

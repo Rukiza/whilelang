@@ -740,5 +740,9 @@ public interface Expr extends SyntacticElement {
 			return to;
 		}
 
+		@Override
+		public String toString() {
+			return "Cast - From: " + from + " To: "+to;
+		}
 	}
 }

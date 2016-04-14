@@ -55,6 +55,7 @@ public interface Type extends SyntacticElement {
 		public String toString() {
 			return "void";
 		}
+
 	}
 
 	/**

@@ -899,6 +899,12 @@ public class Parser {
 		// Determine base type
 		Type type = parseBaseType();
 		// Parse union types if any
+		// Determine array level (if any)
+		while (index < tokens.size() && tokens.get(index) instanceof LeftSquare) {
+			match("[");
+			match("]");
+			type = new Type.Array(type, sourceAttr(start, index - 1));
+		}
 		if (index < tokens.size() && tokens.get(index) instanceof Bar) {
 //			System.out.println("Should have made it here.");
 			List<Type> types = new ArrayList<>();
@@ -910,15 +916,29 @@ public class Parser {
 				types.add(parseType());
 			}
 			type = new Type.UnionType(types, sourceAttr(start, index));
-		}
-		// Determine array level (if any)
-		while (index < tokens.size() && tokens.get(index) instanceof LeftSquare) {
-			match("[");
-			match("]");
-			type = new Type.Array(type, sourceAttr(start, index - 1));
+			flattenUnion((Type.UnionType) type);
+//			System.out.println("Start");
+//			types.forEach(System.out::println);
+//			System.out.println("End");
 		}
 		// Done
 		return type;
+	}
+
+	private void flattenUnion(Type.UnionType type) {
+		List<Type> types = type.types;
+		for (int i = 0; i < types.size(); i++) {
+			if (types.get(i) instanceof Type.UnionType) {
+				Type.UnionType t = (Type.UnionType) types.get(i);
+//				System.out.println("MAde it here");
+				flattenUnion(t);
+				types.remove(t);
+				int j = i;
+				for (Type l : t.types){
+					types.add(j++, l);
+				}
+			}
+		}
 	}
 
 	/**
