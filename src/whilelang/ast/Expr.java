@@ -713,36 +713,4 @@ public interface Expr extends SyntacticElement {
 			return arguments;
 		}
 	}
-
-
-	public static class Cast extends SyntacticElement.Impl implements Expr {
-
-		private Expr from;
-		private Type to;
-
-		public Cast (Expr from, Type to, Attribute ... attributes) {
-			super(attributes);
-			this.from = from;
-			this.to = to;
-		}
-
-		public Cast (Expr from, Type to, List<Attribute> attributes) {
-			super(attributes);
-			this.from = from;
-			this.to = to;
-		}
-
-		public Expr getFrom() {
-			return from;
-		}
-
-		public Type getTo() {
-			return to;
-		}
-
-		@Override
-		public String toString() {
-			return "Cast - From: " + from + " To: "+to;
-		}
-	}
 }

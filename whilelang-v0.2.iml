@@ -17,5 +17,6 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="jasm-v0.1.7" level="project" />
   </component>
 </module>

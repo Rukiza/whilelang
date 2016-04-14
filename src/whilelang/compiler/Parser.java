@@ -705,17 +705,10 @@ public class Parser {
 
 		if (token instanceof LeftBrace) {
 			match("(");
-			if (isTypeAhead(index)) {
-				Type t = parseType();
-				checkNotEof();
-				match(")");
-				return new Expr.Cast(parseExpr(context), t, sourceAttr(start, index));
-			}else {
-				Expr e = parseExpr(context);
-				checkNotEof();
-				match(")");
-				return e;
-			}
+			Expr e = parseExpr(context);
+			checkNotEof();
+			match(")");
+			return e;
 		} else if ((index + 1) < tokens.size() && token instanceof Identifier
 				&& tokens.get(index + 1) instanceof LeftBrace) {
 			// must be a method invocation
@@ -898,47 +891,14 @@ public class Parser {
 		checkNotEof();
 		// Determine base type
 		Type type = parseBaseType();
-		// Parse union types if any
 		// Determine array level (if any)
 		while (index < tokens.size() && tokens.get(index) instanceof LeftSquare) {
 			match("[");
 			match("]");
 			type = new Type.Array(type, sourceAttr(start, index - 1));
 		}
-		if (index < tokens.size() && tokens.get(index) instanceof Bar) {
-//			System.out.println("Should have made it here.");
-			List<Type> types = new ArrayList<>();
-			types.add(type);
-			while (index < tokens.size() && tokens.get(index) instanceof Bar) {
-//				System.out.println("And done this once");
-
-				match("|");
-				types.add(parseType());
-			}
-			type = new Type.UnionType(types, sourceAttr(start, index));
-			flattenUnion((Type.UnionType) type);
-//			System.out.println("Start");
-//			types.forEach(System.out::println);
-//			System.out.println("End");
-		}
 		// Done
 		return type;
-	}
-
-	private void flattenUnion(Type.UnionType type) {
-		List<Type> types = type.types;
-		for (int i = 0; i < types.size(); i++) {
-			if (types.get(i) instanceof Type.UnionType) {
-				Type.UnionType t = (Type.UnionType) types.get(i);
-//				System.out.println("MAde it here");
-				flattenUnion(t);
-				types.remove(t);
-				int j = i;
-				for (Type l : t.types){
-					types.add(j++, l);
-				}
-			}
-		}
 	}
 
 	/**
@@ -965,9 +925,6 @@ public class Parser {
 		} else if (token.text.equals("string")) {
 			matchKeyword("string");
 			return new Type.Strung(sourceAttr(start, index - 1));
-		} else if (token.text.equals("null")) {
-			matchKeyword("null");
-			return new Type.Null(sourceAttr(start, index + 1));
 		} else if (token instanceof LeftCurly) {
 			// record type
 			return parseRecordType();

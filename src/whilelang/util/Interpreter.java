@@ -21,7 +21,6 @@ package whilelang.util;
 import java.util.*;
 
 import whilelang.ast.*;
-import whilelang.compiler.TypeChecker;
 
 import static whilelang.util.SyntaxError.*;
 
@@ -37,7 +36,6 @@ import static whilelang.util.SyntaxError.*;
 public class Interpreter {
 	private HashMap<String, WhileFile.Decl> declarations;
 	private WhileFile file;
-	private WhileFile.MethodDecl method;
 	
 	public void run(WhileFile wf) {
 		// First, initialise the map of declaration names to their bodies.
@@ -67,7 +65,7 @@ public class Interpreter {
 	 *            Array of argument values.
 	 */
 	private Object execute(WhileFile.MethodDecl function, Object... arguments) {
-		method = function;
+		
 		// First, sanity check the number of arguments
 		if(function.getParameters().size() != arguments.length){
 			throw new RuntimeException(
@@ -301,41 +299,10 @@ public class Interpreter {
 			return execute((Expr.Unary) expr,frame);
 		} else if(expr instanceof Expr.Variable) {
 			return execute((Expr.Variable) expr,frame);
-		} else if(expr instanceof Expr.Cast) {
-			return execute((Expr.Cast) expr,frame);
 		} else {
 			internalFailure("unknown expression encountered (" + expr + ")", file.filename,expr);
 			return null;
 		} 
-	}
-	
-	private Object execute(Expr.Cast expr, HashMap<String, Object> frame) {
-		if (frame.containsKey(expr.getFrom().toString())){
-			TypeChecker t = new TypeChecker();
-			t.check(file);
-			HashMap<String, Type> map = new HashMap<>();
-			//for (Map.Entry entry: map.entrySet()) {
-			//	map.put(entry.getKey().toString(), t.typeOf(entry.getValue(), expr, true));
-			//}
-			Map<String, Type> m = t.enviro.get(method.getName());
-				for (Map.Entry<String, Type> entry: m.entrySet()) {
-					if (entry.getKey().equals(expr.getFrom().toString())) {
-//						System.out.println(entry);
-						map.put(expr.getFrom().toString(), entry.getValue());
-					}
-				}
-
-//			map.put(expr.getFrom().toString(), t.typeOf(frame.get(expr.getFrom().toString()), expr, true));
-			Type l = t.check((Expr.Variable) expr.getFrom(), map);
-			Type p = t.typeOf(frame.get(expr.getFrom().toString()), expr,true);
-			System.out.println(expr.getTo());
-			System.out.println(p);
-			System.out.println(l);
-
-			t.checkInstanceOf(p, expr.getTo(), expr.getTo().getClass());
-			//System.out.println(frame.get(expr.getFrom().toString()));
-		}
-		return execute(expr.getFrom(), frame);
 	}
 	
 	private Object execute(Expr.Binary expr, HashMap<String,Object> frame) {
@@ -364,20 +331,8 @@ public class Interpreter {
 		case REM:
 			return ((Integer)lhs) % ((Integer)rhs);			
 		case EQ:
-			//Changes made here by shane.
-			if (lhs == null) {
-				return lhs == rhs;
-			}else if (rhs == null) {
-				return rhs == lhs;
-			}
 			return lhs.equals(rhs);
 		case NEQ:
-			if (lhs == null) {
-				return lhs != rhs;
-			}
-			else if (rhs == null) {
-				return lhs != rhs;
-			}
 			return !lhs.equals(rhs);
 		case LT:
 			return ((Integer)lhs) < ((Integer)rhs);			

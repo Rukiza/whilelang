@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import whilelang.ast.*;
 import whilelang.util.Pair;
@@ -46,8 +45,7 @@ public class TypeChecker {
 	private WhileFile file;
 	private WhileFile.MethodDecl method;
 	private HashMap<String,WhileFile.MethodDecl> methods;
-	private HashMap<String,WhileFile.TypeDecl> types;
-	public HashMap<String, HashMap<String, Type>> enviro = new HashMap<>();
+	private HashMap<String,WhileFile.TypeDecl> types; 
 	
 	public void check(WhileFile wf) {
 		this.file = wf;
@@ -60,7 +58,7 @@ public class TypeChecker {
 				this.methods.put(fd.name(), fd);
 			} else if(declaration instanceof WhileFile.TypeDecl) {
 				WhileFile.TypeDecl fd = (WhileFile.TypeDecl) declaration;
-				this.types.put(fd.name(), toNormalForm(fd));
+				this.types.put(fd.name(), fd);
 			}
 		}
 		
@@ -72,100 +70,7 @@ public class TypeChecker {
 			}
 		}
 	}
-
-	private WhileFile.TypeDecl toNormalForm(WhileFile.TypeDecl fd) {
-		return new WhileFile.TypeDecl(
-				toNormalForm(fd.getType()),
-				fd.name(),
-				fd.attributes().toArray(new Attribute[fd.attributes().size()]));
-	}
-
-	private Type toNormalForm(Type type) {
-		if (type instanceof Type.Record) {
-			return toNormalForm((Type.Record) type);
-		} else if (type instanceof Type.Void) {
-			return type;
-		} else if (type instanceof Type.UnionType) {
-			return toNormalForm((Type.UnionType) type);
-		} else if (type instanceof Type.Int) {
-			return type;
-		} else if (type instanceof Type.Array) {
-			return type;
-		} else if (type instanceof Type.Bool) {
-			return type;
-		} else if (type instanceof Type.Char) {
-			return type;
-		} else if (type instanceof Type.Strung) {
-			return type;
-		} else if (type instanceof Type.Null) {
-			return type;
-		} else if (type instanceof Type.Named) {
-			return type;
-		}
-		return type;
-	}
-
-	private Type toNormalForm(Type.UnionType type) {
-		List<Type> types = type.types.stream().map(this::toNormalForm).collect(Collectors.toList());
-
-		return new Type.UnionType(
-				types,
-				type.attributes().toArray(new Attribute[type.attributes().size()]));
-	}
-
-	private Type toNormalForm(Type.Record type) {
-		List<Pair<Type, String>> fields = type.getFields();
-		List<Type> types = new ArrayList<>();
-		Map<String, List<Type>> map = new HashMap<>();
-
-		int test = 0;
-		for (Pair<Type, String> pair: fields) {
-			if (pair.first() instanceof Type.UnionType) {
-				map.put(pair.second(), ((Type.UnionType) pair.first()).types);
-				test++;
-			} else {
-				List<Type> temp = new ArrayList<>();
-				temp.add(pair.first());
-				map.put(pair.second(), temp);
-			}
-		}
-		if (test == 0) {
-			return type;
-		}
-
-		List<List<Pair<Type, String>>> temp = new ArrayList<>();
-		int size = 1;
-		for (List<Type> list: map.values()) {
-			size = size * list.size();
-			for (int i = 0; i < list.size(); i++) {
-				temp.add(new ArrayList<>());
-			}
-		}
-		int i = 0;
-		int somthing = 0;
-		for (String name: map.keySet()) {
-			int mod = temp.size() / map.get(name).size();
-			for (int l = 0; l < map.get(name).size(); l++) {
-				temp.get(i).add(new Pair<>(map.get(name).get(l), name));
-				somthing++;
-				if (somthing >= mod) {
-					i++;
-					somthing = 0;
-				}
-			}
-		}
-
-		for (List<Pair<Type, String>> v: temp){
-			types.add(new Type.Record(v));
-		}
-//		System.out.println(map);
-//		System.out.println(temp);
-//		System.out.println(types);
-
-		return new Type.UnionType(types,
-				type.attributes().toArray(new Attribute[type.attributes().size()]));
-	}
-
+	
 	public void check(WhileFile.TypeDecl td) {
 		checkNotVoid(td.getType(),td.getType());
 	}
@@ -175,8 +80,6 @@ public class TypeChecker {
 		
 		// First, initialise the typing environment
 		HashMap<String,Type> environment = new HashMap<String,Type>();
-		enviro.put(method.getName(),environment);
-
 		for (WhileFile.Parameter p : fd.getParameters()) {
 			checkNotVoid(p.getType(),p);
 			environment.put(p.name(), p.getType());
@@ -331,8 +234,6 @@ public class TypeChecker {
 			type = check((Expr.Unary) expr, environment);
 		} else if(expr instanceof Expr.Variable) {
 			type = check((Expr.Variable) expr, environment);
-		} else if(expr instanceof Expr.Cast) {
-			type = check((Expr.Cast) expr, environment);
 		} else {
 			internalFailure("unknown expression encountered (" + expr + ")", file.filename,expr);
 			return null; // dead code
@@ -344,71 +245,7 @@ public class TypeChecker {
 		
 		return type;
 	}
-
-	/**
-	 * TODO: Check this is right.
-	 * @param expr
-	 * @param enviroment
-     * @return
-     */
-	public Type check(Expr.Cast expr, Map<String, Type> enviroment) {
-//		System.out.println(expr);
-		Type type = null;
-		if (expr.getTo() instanceof Type.Named) {
-			Type.Named named = (Type.Named) expr.getTo();
-			if (types.containsKey(named.getName())) {
-				Type body = types.get(named.getName()).getType();
-//				System.out.println(named.getName());
-				type = body;
-			} else {
-				internalFailure("unknown expression encountered (" + expr + ")", file.filename, expr);
-				return null;
-			}
-		} else if (expr.getTo() instanceof Type.UnionType) {
-			Type.UnionType union = (Type.UnionType) expr.getTo();
-//			System.out.println(union);
-			Type body = check(expr.getFrom(), enviroment);
-//			System.out.println(body);
-			Type.UnionType ubody = (Type.UnionType) body;
-			for (Type t: union.types) {
-				boolean b = false;
-//				System.out.print("Dogs: "+t);
-				for (Type u: ubody.types) {
-//					System.out.println(" - "+u);
-					if (u.toString().trim().equals(t.toString().trim())){
-//						System.out.println("Cats");
-						b = true;
-					}
-				}
-				if (!b) {
-					internalFailure("unknown expression encountered (" + expr + ")", file.filename, expr);
-				}
-			}
-			type = ubody;
-
-		} else if (expr.getTo() instanceof Type.Record) {
-			type = expr.getTo();
-		} else if (expr.getFrom() instanceof Expr.Variable) {
-			Expr.Variable v = (Expr.Variable) expr.getFrom();
-			System.out.println(v.getName());
-			System.out.println(enviroment.containsKey(v.getName()));
-			System.out.println(enviroment.get(v.getName()));
-//			if (types.containsKey()) {
-//				type = typeOf(types.get(v.getName()), v);
-//				System.out.println(type);
-//			} else {
-				type = expr.getTo();
-//			}
-
-		} else {
-			type = expr.getTo();
-		}
-//		System.out.println(check(expr.getFrom(), enviroment));
-//		System.out.println(expr.getFrom());
-		checkInstanceOf(check(expr.getFrom(),enviroment),expr.getTo(), type.getClass());
-		return expr.getTo();
-	}
-
+	
 	public Type check(Expr.Binary expr, Map<String,Type> environment) {
 		Type leftType = check(expr.getLhs(), environment);
 		Type rightType = check(expr.getRhs(), environment);
@@ -555,10 +392,6 @@ public class TypeChecker {
 		}
 		return type;
 	}
-
-	public Type typeOf(Object conts, SyntacticElement elem, boolean b) {
-		return typeOf(conts, elem);
-	}
 	
 	/**
 	 * Determine the type of a constant value
@@ -572,8 +405,6 @@ public class TypeChecker {
 			return new Type.Bool();
 		} else if (constant instanceof Character) {
 			return new Type.Char();
-		} else if (constant == null) {
-			return new Type.Null();
 		} else if (constant instanceof Integer) {
 			return new Type.Int();
 		} else if (constant instanceof String) {
@@ -599,7 +430,6 @@ public class TypeChecker {
 			}
 			return new Type.Record(fields);
 		} else {
-			System.out.println(constant);
 			internalFailure("unknown constant encountered (" + elem + ")", file.filename, elem);
 			return null; // dead code
 		}
@@ -621,6 +451,7 @@ public class TypeChecker {
 	 * Check that a given type t2 is an instance of of another type t1. This
 	 * method is useful for checking that a type is, for example, a List type.
 	 * 
+	 * @param t1
 	 * @param type
 	 * @param element
 	 *            Used for determining where to report syntax errors.
@@ -638,31 +469,7 @@ public class TypeChecker {
 				syntaxError("unknown type encountered: " + type, file.filename,
 						element);
 			}
-		}
-		//This works. ..... May need changing.
-		if (type instanceof Type.UnionType) {
-			boolean b = false;
-			for (Type t: ((Type.UnionType) type).types) {
-				for (Class<?> instance: instances) {
-					//if (instance.isInstance(t)) {
-					if (element instanceof Type.UnionType) {
-						for (Type l: ((Type.UnionType) type).types){
-							if (instance.isInstance(l)) {
-								checkInstanceOf(t, l, instances);
-							}
-						}
-					} else {
-						checkInstanceOf(t, element, instances);
-					}
-				}
-				for (Class<?> instance: instances) {
-					if(instance.isInstance(t)) {
-						return t;
-					}
-				}
-			}
-			return type;
-		}
+		} 		
 		for (Class<?> instance : instances) {
 			if (instance.isInstance(type)) {
 				// This cast is clearly unsafe. It relies on the caller of this
@@ -681,7 +488,7 @@ public class TypeChecker {
 				msg = msg + " or ";
 			}
 			firstTime=false;
-//			System.out.println(instance.getName());
+			
 			if (instance.getName().endsWith("Bool")) {
 				msg += "bool";
 			} else if (instance.getName().endsWith("Char")) {
@@ -733,10 +540,7 @@ public class TypeChecker {
 	 * @param element
 	 *            Used for determining where to report syntax errors.
 	 */
-	public boolean isSubtype(Type t1, Type t2, SyntacticElement element) {
-//		System.out.println(t1);
-//		System.out.println(t1 instanceof Type.Array);
-//		System.out.println(t2);
+	public boolean isSubtype(Type t1, Type t2, SyntacticElement element) {		
 		if (t2 instanceof Type.Void) {
 			// OK			
 			return true;
@@ -752,29 +556,6 @@ public class TypeChecker {
 		} else if (t1 instanceof Type.Strung && t2 instanceof Type.Strung) {
 			// OK
 			return true;
-		} else if (t1 instanceof Type.Null && t2 instanceof Type.Null) {
-			//OK
-			return true;
-		} else if (t2 instanceof Type.UnionType) {
-			boolean b = true;
-			Type.UnionType ut = (Type.UnionType) t2;
-			for (Type t: ut.types) {
-				if (!isSubtype(t1, t, element)){
-					b = false;
-				}
-			}
-			return b;
-		} else if (t1 instanceof Type.UnionType) {
-//			System.out.println("T1 is a union");
-			boolean b = false;
-			Type.UnionType ut = (Type.UnionType) t1;
-			for (Type t: ut.types) {
-				b = isSubtype(t ,t2, element);
-				if (b) {
-					return b;
-				}
-			}
-			return b;
 		} else if (t1 instanceof Type.Array && t2 instanceof Type.Array) {
 			Type.Array l1 = (Type.Array) t1;
 			Type.Array l2 = (Type.Array) t2;
@@ -801,6 +582,15 @@ public class TypeChecker {
 					}
 				}
 				return true;
+			}		
+		} else if (t1 instanceof Type.Named) {
+			Type.Named tn = (Type.Named) t1;
+			if (types.containsKey(tn.getName())) {
+				Type body = types.get(tn.getName()).getType();
+				return isSubtype(body, t2, element);
+			} else {
+				syntaxError("unknown type encountered: " + t1, file.filename,
+						element);
 			}
 		} else if (t2 instanceof Type.Named) {
 			Type.Named tn = (Type.Named) t2;
@@ -811,17 +601,8 @@ public class TypeChecker {
 				syntaxError("unknown type encountered: " + t2, file.filename,
 						element);
 			}
-		} else if (t1 instanceof Type.Named) {
-			Type.Named tn = (Type.Named) t1;
-			if (types.containsKey(tn.getName())) {
-				Type body = types.get(tn.getName()).getType();
-				return isSubtype(body, t2, element);
-			} else {
-				syntaxError("unknown type encountered: " + t1, file.filename,
-						element);
-			}
-		}
-		return false;
+		} 		
+		return false;		
 	}
 	
 	/**
@@ -842,6 +623,7 @@ public class TypeChecker {
 	 * cannot be used in certain situations.
 	 * 
 	 * @param t
+	 * @param elemt
 	 */
 	public void checkNotVoid(Type t, SyntacticElement elem) {
 		if(t instanceof Type.Void) {

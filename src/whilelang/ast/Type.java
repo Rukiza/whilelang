@@ -19,7 +19,6 @@
 package whilelang.ast;
 
 import java.util.*;
-import java.util.jar.Attributes;
 
 import whilelang.util.Pair;
 import whilelang.util.SyntacticElement;
@@ -55,7 +54,6 @@ public interface Type extends SyntacticElement {
 		public String toString() {
 			return "void";
 		}
-
 	}
 
 	/**
@@ -93,18 +91,6 @@ public interface Type extends SyntacticElement {
 		
 		public String toString() {
 			return "int";
-		}
-	}
-
-
-	public static final class Null extends SyntacticElement.Impl implements Type {
-
-		public Null(Attribute... attributes) {
-			super(attributes);
-		}
-
-		public String toString() {
-			return "null";
 		}
 	}
 
@@ -253,35 +239,5 @@ public interface Type extends SyntacticElement {
 
 			return "{" + r + "}";
 		}
-	}
-
-	public static final class UnionType extends SyntacticElement.Impl implements Type {
-
-		public List<Type> types;
-
-		public UnionType (List<Type> types, Attribute ... attributes){
-			super(attributes);
-			this.types = new ArrayList<>(types);
-		}
-
-		@Override
-		public String toString() {
-			StringBuilder builder = new StringBuilder();
-			int i = 0;
-			while (i < types.size()) {
-				if (i == 0) {
-					builder.append(" ")
-							.append(types.get(i))
-							.append(" ");
-				} else {
-					builder.append("| ")
-							.append(types.get(i))
-							.append(" ");
-				}
-
-				i++;
-			}
-			return builder.toString();
-		}
-	}
+	}	
 }
