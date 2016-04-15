@@ -199,15 +199,33 @@ public class ClassFileWriter {
 	}
 	
 	private void translate(Stmt.Break stmt, Context context, List<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.Goto(context.breakLabel));
 		
 	}
 	
 	private void translate(Stmt.Continue stmt, Context context, List<Bytecode> bytecodes) {
-		
+		bytecodes.add(new Bytecode.Goto(context.continueLabel));
 	}
 	
 	private void translate(Stmt.For stmt, Context context, List<Bytecode> bytecodes) {
-		
+		String oldBreakLabel = context.breakLabel;
+		String oldContinueLabel = context.continueLabel;
+		translate(stmt.getDeclaration(), context, bytecodes);
+		context.breakLabel = freshLabel();
+		context.continueLabel = freshLabel();
+		String startLabel = freshLabel();
+		bytecodes.add(new Bytecode.Goto(startLabel));
+		bytecodes.add(new Bytecode.Label(context.continueLabel));
+		translate(stmt.getIncrement(), context, bytecodes);
+		bytecodes.add(new Bytecode.Label(startLabel));
+		translate(stmt.getCondition(), context, bytecodes);
+		bytecodes.add(new Bytecode.If(IfMode.EQ, context.breakLabel));
+		translate(stmt.getBody(), context, bytecodes);
+		bytecodes.add(new Bytecode.Goto(context.continueLabel));
+		bytecodes.add(new Bytecode.Label(context.breakLabel));
+		context.breakLabel = oldBreakLabel;
+		context.continueLabel = oldContinueLabel;
+
 	}
 	
 	private void translate(Stmt.IfElse stmt, Context context, List<Bytecode> bytecodes) {
@@ -227,7 +245,18 @@ public class ClassFileWriter {
 	}
 	
 	private void translate(Stmt.While stmt, Context context, List<Bytecode> bytecodes) {
-				
+		String oldBreakLabel = context.breakLabel;
+		String oldContinueLabel = context.continueLabel;
+		context.breakLabel = freshLabel();
+		context.continueLabel = freshLabel();
+		bytecodes.add(new Bytecode.Label(context.continueLabel));
+		translate(stmt.getCondition(), context, bytecodes);
+		bytecodes.add(new Bytecode.If(IfMode.EQ, context.breakLabel));
+		translate(stmt.getBody(), context, bytecodes);
+		bytecodes.add(new Bytecode.Goto(context.continueLabel));
+		bytecodes.add(new Bytecode.Label(context.breakLabel));
+		context.breakLabel = oldBreakLabel;
+		context.continueLabel = oldContinueLabel;
 	}
 	
 	private void translate(Stmt.Print stmt, Context context, List<Bytecode> bytecodes) {
@@ -242,6 +271,7 @@ public class ClassFileWriter {
 			// Translate returned expression
 			translate(expr,context,bytecodes);
 			// Add return bytecode
+
 			bytecodes.add(new Bytecode.Return(toJvmType(attr.type)));
 		} else {
 			bytecodes.add(new Bytecode.Return(null));
@@ -249,7 +279,45 @@ public class ClassFileWriter {
 	}
 	
 	private void translate(Stmt.Switch stmt, Context context, List<Bytecode> bytecodes) {
-	
+		String oldBreakLabel = context.breakLabel;
+		context.breakLabel = freshLabel();
+		List<Stmt.Case> cases = stmt.getCases();
+
+		String fallThough = null;
+		int i = 0;
+		for (Stmt.Case c: cases) {
+
+			if (c.getValue() != null) {
+				String endLabel  = freshLabel();
+				translate(stmt.getExpr(), context, bytecodes);
+				translate(c.getValue(), context, bytecodes);
+
+				Attribute.Type attr = c.getValue().attribute(Attribute.Type.class);
+				JvmType type = toJvmType(attr.type);
+
+				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.NE, type, endLabel));
+				if (fallThough != null){
+					bytecodes.add(new Bytecode.Label(fallThough));
+				}
+				fallThough = freshLabel();
+				translate(c.getBody(), context, bytecodes);
+				if (i < cases.size()-1) {
+					bytecodes.add(new Bytecode.Goto(fallThough));
+				}
+				bytecodes.add(new Bytecode.Label(endLabel));
+			} else {
+				System.out.println("DEFAULT");
+				if (fallThough != null) {
+					bytecodes.add(new Bytecode.Label(fallThough));
+				}
+				translate(c.getBody(), context, bytecodes);
+
+			}
+			i++;
+		}
+
+		bytecodes.add(new Bytecode.Label(context.breakLabel));
+		context.breakLabel = oldBreakLabel;
 	}
 	
 	private void translate(Stmt.VariableDeclaration stmt, Context context, List<Bytecode> bytecodes) {
@@ -871,6 +939,10 @@ public class ClassFileWriter {
 		 * within the same class.
 		 */
 		private final JvmType.Clazz enclosingClass;
+
+		public String breakLabel = "";
+		public String continueLabel = "";
+
 		
 		/**
 		 * Maps each declared variable to a jvm register index
