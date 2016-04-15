@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -24,7 +26,15 @@ public abstract class AbstractJvmValidTests {
 	public AbstractJvmValidTests(String testName) {
 		this.testName = testName;
 	}
-
+	static {
+		try {
+			Method method = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{URL.class});
+			method.setAccessible(true);
+			method.invoke((URLClassLoader)ClassLoader.getSystemClassLoader(), new Object[]{new File("tests/valid").toURL()});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 	// Here we enumerate all available test cases.
 	public static Collection<Object[]> data(String... tests) {
 		HashSet<String> allowedTests = new HashSet<String>();

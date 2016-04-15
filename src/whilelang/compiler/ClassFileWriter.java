@@ -338,7 +338,170 @@ public class ClassFileWriter {
 	}
 	
 	private void translate(Expr.Binary expr, Context context, List<Bytecode> bytecodes) {
-		
+		String eqLabel;
+		String endLabel;
+		Attribute.Type attr;
+		JvmType type;
+		switch (expr.getOp()) {
+			case AND:
+				eqLabel = freshLabel();
+				endLabel = freshLabel();
+				translate(expr.getLhs(), context, bytecodes);
+				bytecodes.add(new Bytecode.If(IfMode.EQ, eqLabel));
+				translate(expr.getRhs(), context, bytecodes);
+				bytecodes.add(new Bytecode.If(IfMode.EQ, eqLabel));
+				//If statement branch to fail if false done
+				//If statement branch to fail if false done
+				bytecodes.add(new Bytecode.LoadConst(true));
+				bytecodes.add(new Bytecode.Goto(endLabel));
+				//Correct branch to end
+				bytecodes.add(new Bytecode.Label(eqLabel));
+				bytecodes.add(new Bytecode.LoadConst(false));
+				//False leave to make it to end
+				bytecodes.add(new Bytecode.Label(endLabel));
+				//End Label
+
+				break;
+			case OR:
+				eqLabel = freshLabel();
+				endLabel = freshLabel();
+				translate(expr.getLhs(), context, bytecodes);
+				bytecodes.add(new Bytecode.If(IfMode.NE, eqLabel));
+				translate(expr.getRhs(), context, bytecodes);
+				bytecodes.add(new Bytecode.If(IfMode.NE, eqLabel));
+				//If statement branch to fail if false done
+				//If statement branch to fail if false done
+				bytecodes.add(new Bytecode.LoadConst(false));
+				bytecodes.add(new Bytecode.Goto(endLabel));
+				//Correct branch to end
+				bytecodes.add(new Bytecode.Label(eqLabel));
+				bytecodes.add(new Bytecode.LoadConst(true));
+				//False leave to make it to end
+				bytecodes.add(new Bytecode.Label(endLabel));
+				//End Label
+				break;
+			case ADD:
+				translate(expr.getLhs(), context, bytecodes);
+				translate(expr.getRhs(), context, bytecodes);
+				bytecodes.add(new Bytecode.BinOp(Bytecode.BinOp.ADD, new JvmType.Int()));
+				break;
+			case SUB:
+				translate(expr.getLhs(),context, bytecodes);
+				translate(expr.getRhs(),context, bytecodes);
+				bytecodes.add(new Bytecode.BinOp(Bytecode.BinOp.SUB, new JvmType.Int()));
+				break;
+			case MUL:
+				translate(expr.getLhs(), context, bytecodes);
+				translate(expr.getRhs(), context, bytecodes);
+				bytecodes.add(new Bytecode.BinOp(Bytecode.BinOp.MUL, new JvmType.Int()));
+				break;
+			case DIV:
+				translate(expr.getLhs(),context, bytecodes);
+				translate(expr.getRhs(),context, bytecodes);
+				bytecodes.add(new Bytecode.BinOp(Bytecode.BinOp.DIV, new JvmType.Int()));
+				break;
+			case REM:
+				translate(expr.getLhs(),context, bytecodes);
+				translate(expr.getRhs(),context, bytecodes);
+				bytecodes.add(new Bytecode.BinOp(Bytecode.BinOp.REM, new JvmType.Int()));
+				break;
+			case EQ:
+				translate(expr.getLhs(), context,bytecodes);
+				translate(expr.getRhs(), context, bytecodes);
+				eqLabel = freshLabel();
+				endLabel = freshLabel();
+
+				attr = expr.getRhs().attribute(Attribute.Type.class);
+				type = toJvmType(attr.type);
+
+				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.EQ, type, eqLabel));
+				bytecodes.add(new Bytecode.LoadConst(false));
+				bytecodes.add(new Bytecode.Goto(endLabel));
+				bytecodes.add(new Bytecode.Label(eqLabel));
+				bytecodes.add(new Bytecode.LoadConst(true));
+				bytecodes.add(new Bytecode.Label(endLabel));
+				break;
+			case NEQ:
+				translate(expr.getLhs(), context,bytecodes);
+				translate(expr.getRhs(), context, bytecodes);
+				eqLabel = freshLabel();
+				endLabel = freshLabel();
+
+				attr = expr.getRhs().attribute(Attribute.Type.class);
+				type = toJvmType(attr.type);
+
+				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.NE, type, eqLabel));
+				bytecodes.add(new Bytecode.LoadConst(false));
+				bytecodes.add(new Bytecode.Goto(endLabel));
+				bytecodes.add(new Bytecode.Label(eqLabel));
+				bytecodes.add(new Bytecode.LoadConst(true));
+				bytecodes.add(new Bytecode.Label(endLabel));
+				break;
+			case LT:
+				translate(expr.getLhs(), context,bytecodes);
+				translate(expr.getRhs(), context, bytecodes);
+				eqLabel = freshLabel();
+				endLabel = freshLabel();
+
+				attr = expr.getRhs().attribute(Attribute.Type.class);
+				type = toJvmType(attr.type);
+
+				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.LT, type, eqLabel));
+				bytecodes.add(new Bytecode.LoadConst(false));
+				bytecodes.add(new Bytecode.Goto(endLabel));
+				bytecodes.add(new Bytecode.Label(eqLabel));
+				bytecodes.add(new Bytecode.LoadConst(true));
+				bytecodes.add(new Bytecode.Label(endLabel));
+				break;
+			case LTEQ:
+				translate(expr.getLhs(), context,bytecodes);
+				translate(expr.getRhs(), context, bytecodes);
+				eqLabel = freshLabel();
+				endLabel = freshLabel();
+
+				attr = expr.getRhs().attribute(Attribute.Type.class);
+				type = toJvmType(attr.type);
+
+				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.LE, type, eqLabel));
+				bytecodes.add(new Bytecode.LoadConst(false));
+				bytecodes.add(new Bytecode.Goto(endLabel));
+				bytecodes.add(new Bytecode.Label(eqLabel));
+				bytecodes.add(new Bytecode.LoadConst(true));
+				bytecodes.add(new Bytecode.Label(endLabel));
+				break;
+			case GT:
+				translate(expr.getLhs(), context,bytecodes);
+				translate(expr.getRhs(), context, bytecodes);
+				eqLabel = freshLabel();
+				endLabel = freshLabel();
+
+				attr = expr.getRhs().attribute(Attribute.Type.class);
+				type = toJvmType(attr.type);
+
+				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.GT, type, eqLabel));
+				bytecodes.add(new Bytecode.LoadConst(false));
+				bytecodes.add(new Bytecode.Goto(endLabel));
+				bytecodes.add(new Bytecode.Label(eqLabel));
+				bytecodes.add(new Bytecode.LoadConst(true));
+				bytecodes.add(new Bytecode.Label(endLabel));
+				break;
+			case GTEQ:
+				translate(expr.getLhs(), context,bytecodes);
+				translate(expr.getRhs(), context, bytecodes);
+				eqLabel = freshLabel();
+				endLabel = freshLabel();
+
+				attr = expr.getRhs().attribute(Attribute.Type.class);
+				type = toJvmType(attr.type);
+
+				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.GE, type, eqLabel));
+				bytecodes.add(new Bytecode.LoadConst(false));
+				bytecodes.add(new Bytecode.Goto(endLabel));
+				bytecodes.add(new Bytecode.Label(eqLabel));
+				bytecodes.add(new Bytecode.LoadConst(true));
+				bytecodes.add(new Bytecode.Label(endLabel));
+				break;
+		}
 	}
 			
 	private void translate(Expr.Constant expr, Context context, List<Bytecode> bytecodes) {
@@ -531,8 +694,7 @@ public class ClassFileWriter {
 	 * @param bytecodes
 	 */
 	private void unboxAsNecessary(JvmType.Reference jvmType, List<Bytecode> bytecodes) {
-		String unboxMethodName;
-		JvmType.Primitive unboxedJvmType;
+		String unboxMethodName;		JvmType.Primitive unboxedJvmType;
 
 		if (jvmType.equals(JvmTypes.JAVA_LANG_BOOLEAN)) {
 			unboxMethodName = "booleanValue";
@@ -554,7 +716,7 @@ public class ClassFileWriter {
 	 * The construct method provides a generic way to construct a Java object
 	 * using a default constructor which accepts no arguments.
 	 *
-	 * @param owner
+	 * @param owner324
 	 *            The class type to construct
 	 * @param bytecodes
 	 *            The list of bytecodes being accumulated
@@ -727,7 +889,7 @@ public class ClassFileWriter {
 		
 		/**
 		 * Get the enclosing class for this translation context.
-		 * 
+		 * file:///home/brewershan/tmp/WhileLang/lib
 		 * @return
 		 */
 		public JvmType.Clazz getEnclosingClass() {
