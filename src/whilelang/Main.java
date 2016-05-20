@@ -19,12 +19,15 @@
 package whilelang;
 
 import java.io.File;
-import java.lang.reflect.Method;
 
+import jx86.io.AsmFileWriter;
+import jx86.lang.Target;
+import jx86.lang.X86File;
 import whilelang.ast.WhileFile;
-import whilelang.compiler.ClassFileWriter;
 import whilelang.compiler.TypeChecker;
 import whilelang.compiler.WhileCompiler;
+import whilelang.compiler.X86FileWriter;
+import whilelang.testing.X86ValidTests;
 import whilelang.util.*;
 
 public class Main {
@@ -71,30 +74,25 @@ public class Main {
 	 * Compile and execute a given while source file. This will return true if
 	 * the program compiled and executed correctly, otherwise will return false.
 	 * 
-	 * @param sourceFilename
+	 * @param filename
 	 *            Filename of while source file to be compiled.
 	 * @param verbose
 	 *            Flag indicating whether or not to print out detailed
 	 *            information when an error occurs.
 	 * @return
 	 */
-	public static boolean compileAndExecute(String sourceFilename, boolean verbose) {
+	public static boolean compileAndExecute(String filename, boolean verbose) {
 		try {			
-
-			WhileCompiler compiler = new WhileCompiler(sourceFilename);
+			WhileCompiler compiler = new WhileCompiler(filename);
 
 			// First, compile the source file
 			WhileFile ast = compiler.compile();
 			
 			// Second, execute it!
 			//new Interpreter().run(ast);
-			
-			String classFilename = sourceFilename.replace(".while", ".class");
-			new ClassFileWriter(classFilename).write(ast);
-			Class testClass = Class.forName(classFilename.replace(".class", ""));
-			Method m = testClass.getMethod("main");
-			m.invoke(null);
-			
+			X86File f = new X86FileWriter(X86ValidTests.TARGET).build(ast);
+			new AsmFileWriter(new File(filename.replace(".while", ".s"))).write(f);
+
 		} catch (SyntaxError e) {
 			// Catch a syntax error which has occurred during one of the
 			// compiler stages, such as parsing or type checking.
