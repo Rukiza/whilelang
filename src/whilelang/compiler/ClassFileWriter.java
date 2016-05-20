@@ -306,7 +306,7 @@ public class ClassFileWriter {
 				}
 				bytecodes.add(new Bytecode.Label(endLabel));
 			} else {
-				System.out.println("DEFAULT");
+				//System.out.println("DEFAULT");
 				if (fallThough != null) {
 					bytecodes.add(new Bytecode.Label(fallThough));
 				}
