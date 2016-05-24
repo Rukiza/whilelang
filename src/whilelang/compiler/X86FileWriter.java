@@ -378,6 +378,26 @@ public class X86FileWriter {
 			// assigned to into a register. Then create a memory location using
 			// that register as base and translate the rhs directly into that
 			// location.
+			Expr.RecordAccess e = (Expr.RecordAccess) lhs;
+			System.out.println(e);
+			System.out.println(e.getName());
+			System.out.println(e.getSource());
+			System.out.println(context.getVariableLocation(e.getSource().toString()));
+
+			// Determine the field offset
+			Type.Record type = (Type.Record) unwrap(e.getSource().attribute(Attribute.Type.class).type);
+			int offset = getFieldOffset(type, e.getName());
+			// Translate source expression into a temporary stack location. This is
+			// unfortunately a little inefficient in some cases, as we could
+			// potentially avoid all memory usage. But, it will do for now!
+			MemoryLocation recordLocation = (MemoryLocation) allocateLocation(e.getSource(), context);
+			translate(e.getSource(), recordLocation, context);
+			// Finally, copy bits into target location
+			MemoryLocation fieldLocation = new MemoryLocation(target.type(), recordLocation.base, offset);
+			bitwiseCopy(fieldLocation, target, context);
+			//
+			freeLocations(context, recordLocation);
+
 			throw new IllegalArgumentException("record assignment not implemented (yet)");
 		} else {
 			throw new IllegalArgumentException("array assignment not implemented (yet)");
@@ -385,11 +405,14 @@ public class X86FileWriter {
 	}
 
 	public void translate(Stmt.Break statement, Context context) {
-		throw new IllegalArgumentException("break statements not implemented (yet)");
+		List<Instruction> instructions = context.instructions();
+		System.out.println("Breaking" + context.breakLabel);
+		instructions.add(new Instruction.Addr(Instruction.AddrOp.jmp, context.breakLabel));
 	}
 
 	public void translate(Stmt.Continue statement, Context context) {
-		throw new IllegalArgumentException("continue statements not implemented (yet)");
+		List<Instruction> instructions = context.instructions();
+		instructions.add(new Instruction.Addr(Instruction.AddrOp.jmp, context.contLabel));
 	}
 
 	/**
@@ -399,6 +422,11 @@ public class X86FileWriter {
 	 * @param statement
 	 */
 	public void translate(Stmt.For statement, Context context) {
+		String oldBreakLabel = context.breakLabel;
+		String oldContLabel = context.contLabel;
+		context.breakLabel = freshLabel();
+		context.contLabel = freshLabel();
+
 		List<Instruction> instructions = context.instructions();
 		String headLabel = freshLabel();
 		String exitLabel = freshLabel();
@@ -415,11 +443,16 @@ public class X86FileWriter {
 		translate(statement.getBody(), context);
 
 		// Translate Increment and loop around
+		instructions.add(new Instruction.Label(context.contLabel));
 		translate(statement.getIncrement(), context);
 		instructions.add(new Instruction.Addr(Instruction.AddrOp.jmp, headLabel));
 
 		// Exit ...
+		instructions.add(new Instruction.Label(context.breakLabel));
 		instructions.add(new Instruction.Label(exitLabel));
+
+		context.breakLabel = oldBreakLabel;
+		context.contLabel = oldContLabel;
 	}
 
 	/**
@@ -558,7 +591,33 @@ public class X86FileWriter {
 	 * @param data
 	 */
 	public void translate(Stmt.While statement, Context context) {
-		throw new IllegalArgumentException("while loops not implemented (yet)");
+		String oldBreakLabel = context.breakLabel;
+		String oldContLabel = context.contLabel;
+		context.breakLabel = freshLabel();
+		context.contLabel = freshLabel();
+
+		List<Instruction> instructions = context.instructions();
+		String headLabel = freshLabel();
+		String exitLabel = freshLabel();
+
+		// Start loop, and translate condition
+		instructions.add(new Instruction.Label(headLabel));
+		// Translate the condition expression and branch to the false label
+		translateCondition(statement.getCondition(), exitLabel, context);
+
+		// Translate Loop Body
+		translate(statement.getBody(), context);
+
+		// Translate Increment and loop around
+		instructions.add(new Instruction.Label(context.contLabel));
+		instructions.add(new Instruction.Addr(Instruction.AddrOp.jmp, headLabel));
+
+		// Exit ...
+		instructions.add(new Instruction.Label(context.breakLabel));
+		instructions.add(new Instruction.Label(exitLabel));
+
+		context.breakLabel = oldBreakLabel;
+		context.contLabel = oldContLabel;
 	}
 
 	/**
@@ -571,12 +630,15 @@ public class X86FileWriter {
 	 * @param data
 	 */
 	public void translate(Stmt.Switch statement, Context context) {
+		String oldBreakLabel = context.breakLabel;
+
 		List<Instruction> instructions = context.instructions();
 		//
 		Location[] tmps = allocateLocations(context, statement.getExpr(), statement.getExpr());
 		// The exit label will represent the exit point from the switch
 		// statement. Any cases which end in a break will branch to it.
 		String exitLabel = freshLabel();
+		context.breakLabel = exitLabel;
 		// Translate the expression we are switching on, and place result
 		// into the target register.
 		translate(statement.getExpr(), tmps[0], context);
@@ -589,6 +651,8 @@ public class X86FileWriter {
 		// and it would be better to use a jump table in situations where we can
 		// (e.g. for integer values). However, in the general case (e.g. when
 		// switching on records), we cannot use a jump table anyway.
+		int i = 0;
+		String pr = null;
 		for (Stmt.Case c : statement.getCases()) {
 			String nextLabel = freshLabel();
 			Expr constant = c.getValue();
@@ -597,14 +661,48 @@ public class X86FileWriter {
 				translate(c.getValue(), tmps[1], context);
 				bitwiseEquality(tmps[0], tmps[1], nextLabel, context);
 			}
+
+
+			if (statement.getCases().size() > 1) {
+
+				if (i == 0) {
+//				System.out.println("Once");
+				} else if (i == statement.getCases().size() - 1) {
+//				System.out.println("Once 2");
+//				System.out.println(pr);
+					instructions.add(new Instruction.Label(pr));
+				} else {
+//				System.out.println("more than once Once");
+//				System.out.println(pr);
+					instructions.add(new Instruction.Label(pr));
+				}
+			}
+
 			// FIXME: need to handle break and continue statements!
 			translate(c.getBody(), context);
+			if (statement.getCases().size() > 1) {
+				if (i == 0) {
+					pr = freshLabel();
+//				System.out.println(pr);
+					instructions.add(new Instruction.Addr(Instruction.AddrOp.jmp, pr));
+				} else if (i == statement.getCases().size() - 1) {
+//				System.out.println(pr);
+				} else {
+					pr = freshLabel();
+//				System.out.println(pr);
+					instructions.add(new Instruction.Addr(Instruction.AddrOp.jmp, pr));
+				}
+			}
+			i++;
+
 			instructions.add(new Instruction.Label(nextLabel));
 		}
 		// Finally, add the exit label
 		instructions.add(new Instruction.Label(exitLabel));
 		// Free up space used for value being switch upon
 		freeLocations(context, tmps);
+
+		context.breakLabel = oldBreakLabel;
 	}
 
 	// =================================================================
@@ -930,7 +1028,19 @@ public class X86FileWriter {
 	 * @param target
 	 *            Location to store result in (either register or stack
 	 *            location)
-	 */
+	 */		// Determine the field offset
+		Type.Record type = (Type.Record) unwrap(e.getSource().attribute(Attribute.Type.class).type);
+		int offset = getFieldOffset(type, e.getName());
+		// Translate source expression into a temporary stack location. This is
+		// unfortunately a little inefficient in some cases, as we could
+		// potentially avoid all memory usage. But, it will do for now!
+		MemoryLocation recordLocation = (MemoryLocation) allocateLocation(e.getSource(), context);
+		translate(e.getSource(), recordLocation, context);
+		// Finally, copy bits into target location
+		MemoryLocation fieldLocation = new MemoryLocation(target.type(), recordLocation.base, offset);
+		bitwiseCopy(fieldLocation, target, context);
+		//
+		freeLocations(context, recordLocation);
 	public void translateArithmeticOperator(Expr.Binary e, RegisterLocation target, Context context) {
 		List<Instruction> instructions = context.instructions();
 		// Translate lhs and store result in the target register.
@@ -2057,6 +2167,8 @@ public class X86FileWriter {
 		private final X86File.Code code;
 		private final X86File.Data data;
 		private final List<Register> freeRegisters;
+		public String breakLabel = "";
+		public String contLabel = "";
 
 		public Context(List<Register> freeRegisters, Map<String, MemoryLocation> localVariables, String exitLabel,
 				X86File.Code code, X86File.Data data) {
@@ -2118,7 +2230,10 @@ public class X86FileWriter {
 				}
 				ArrayList<Register> nFreeRegs = new ArrayList<Register>(freeRegisters);
 				nFreeRegs.remove(sl.register);
-				return new Context(nFreeRegs, localVariables, exitLabel, code, data);
+				Context c =  new Context(nFreeRegs, localVariables, exitLabel, code, data);
+				c.breakLabel = this.breakLabel;
+				c.contLabel = this.contLabel;
+				return c;
 			} else {
 				return this;
 			}

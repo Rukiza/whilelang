@@ -24,7 +24,7 @@ import whilelang.compiler.X86FileWriter;
 @RunWith(Parameterized.class)
 public class X86ValidTests {	
 	 // you'll need to change this for your platform.
-        public final static Target TARGET = /*Target.LINUX_X86_64; //*/Target.MACOS_X86_64;
+        public final static Target TARGET = Target.LINUX_X86_64; //Target.MACOS_X86_64;
 	
 	private final static String RUNTIME_LIBRARY = "src/whilelang/runtime/runtime.c".replace('/',
 			File.separatorChar);
