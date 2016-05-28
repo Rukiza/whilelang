@@ -384,24 +384,51 @@ public class X86FileWriter {
 			System.out.println(e.getSource());
 			System.out.println(context.getVariableLocation(e.getSource().toString()));
 
-			// Determine the field offset
 			Type.Record type = (Type.Record) unwrap(e.getSource().attribute(Attribute.Type.class).type);
 			int offset = getFieldOffset(type, e.getName());
-			// Translate source expression into a temporary stack location. This is
-			// unfortunately a little inefficient in some cases, as we could
-			// potentially avoid all memory usage. But, it will do for now!
-			MemoryLocation recordLocation = (MemoryLocation) allocateLocation(e.getSource(), context);
-			translate(e.getSource(), recordLocation, context);
-			// Finally, copy bits into target location
-			MemoryLocation fieldLocation = new MemoryLocation(target.type(), recordLocation.base, offset);
-			bitwiseCopy(fieldLocation, target, context);
-			//
-			freeLocations(context, recordLocation);
+			MemoryLocation location = calculateLocation(context, e.getSource(), offset);
 
-			throw new IllegalArgumentException("record assignment not implemented (yet)");
+			translate(statement.getRhs(), location, context);
+//			// Determine the field offset
+//			// Translate source expression into a temporary stack location. This is
+//			// unfortunately a little inefficient in some cases, as we could
+//			// potentially avoid all memory usage. But, it will do for now!
+//			MemoryLocation recordLocation = (MemoryLocation) allocateLocation(e.getSource(), context);
+//			translate(e.getSource(), recordLocation, context);
+//			// Finally, copy bits into target location
+//			MemoryLocation fieldLocation = new MemoryLocation(target.type(), recordLocation.base, offset);
+//			bitwiseCopy(fieldLocation, target, context);
+//			//
+//			freeLocations(context, recordLocation);
+
 		} else {
 			throw new IllegalArgumentException("array assignment not implemented (yet)");
 		}
+	}
+
+	private MemoryLocation calculateLocation(Context context, Expr source, int offset) {
+		if (source instanceof Expr.Variable) {
+			System.out.println("Offset = "+offset);
+			System.out.println("Location = "+context.getVariableLocation(source.toString()));
+			MemoryLocation old = context.getVariableLocation(source.toString());
+			MemoryLocation l = new MemoryLocation(unwrap(source.attribute(Attribute.Type.class).type),
+					context.getVariableLocation(source.toString()).base, old.offset+offset);
+			System.out.println("New location = "+l);
+			return l;
+		}
+		else if (source instanceof Expr.RecordAccess) {
+
+			System.out.println("Source = "+source);
+			Expr.RecordAccess e = (Expr.RecordAccess) source;
+
+			System.out.println("E = "+e.getSource());
+			Type.Record type = (Type.Record) unwrap(e.getSource().attribute(Attribute.Type.class).type);
+			int oSet = getFieldOffset(type, e.getName());
+			System.out.println("oSet = "+oSet);
+
+			return calculateLocation(context, e.getSource(), offset+oSet);
+		}
+		throw new IllegalArgumentException("array assignment not implemented (yet)");
 	}
 
 	public void translate(Stmt.Break statement, Context context) {
@@ -1029,18 +1056,6 @@ public class X86FileWriter {
 	 *            Location to store result in (either register or stack
 	 *            location)
 	 */		// Determine the field offset
-		Type.Record type = (Type.Record) unwrap(e.getSource().attribute(Attribute.Type.class).type);
-		int offset = getFieldOffset(type, e.getName());
-		// Translate source expression into a temporary stack location. This is
-		// unfortunately a little inefficient in some cases, as we could
-		// potentially avoid all memory usage. But, it will do for now!
-		MemoryLocation recordLocation = (MemoryLocation) allocateLocation(e.getSource(), context);
-		translate(e.getSource(), recordLocation, context);
-		// Finally, copy bits into target location
-		MemoryLocation fieldLocation = new MemoryLocation(target.type(), recordLocation.base, offset);
-		bitwiseCopy(fieldLocation, target, context);
-		//
-		freeLocations(context, recordLocation);
 	public void translateArithmeticOperator(Expr.Binary e, RegisterLocation target, Context context) {
 		List<Instruction> instructions = context.instructions();
 		// Translate lhs and store result in the target register.
