@@ -379,27 +379,12 @@ public class X86FileWriter {
 			// that register as base and translate the rhs directly into that
 			// location.
 			Expr.RecordAccess e = (Expr.RecordAccess) lhs;
-			System.out.println(e);
-			System.out.println(e.getName());
-			System.out.println(e.getSource());
-			System.out.println(context.getVariableLocation(e.getSource().toString()));
 
 			Type.Record type = (Type.Record) unwrap(e.getSource().attribute(Attribute.Type.class).type);
 			int offset = getFieldOffset(type, e.getName());
 			MemoryLocation location = calculateLocation(context, e.getSource(), offset);
 
 			translate(statement.getRhs(), location, context);
-//			// Determine the field offset
-//			// Translate source expression into a temporary stack location. This is
-//			// unfortunately a little inefficient in some cases, as we could
-//			// potentially avoid all memory usage. But, it will do for now!
-//			MemoryLocation recordLocation = (MemoryLocation) allocateLocation(e.getSource(), context);
-//			translate(e.getSource(), recordLocation, context);
-//			// Finally, copy bits into target location
-//			MemoryLocation fieldLocation = new MemoryLocation(target.type(), recordLocation.base, offset);
-//			bitwiseCopy(fieldLocation, target, context);
-//			//
-//			freeLocations(context, recordLocation);
 
 		} else {
 			throw new IllegalArgumentException("array assignment not implemented (yet)");
@@ -964,9 +949,41 @@ public class X86FileWriter {
 			}
 		} else if (expression instanceof Expr.Variable) {
 			translate((Expr.Variable) expression, target, context);
+		} else if (expression instanceof Expr.ArrayInitialiser) {
+			translate((Expr.ArrayInitialiser) expression, (MemoryLocation) target, context);
 		} else {
 			throw new IllegalArgumentException("Unknown expression encountered: " + expression);
 		}
+	}
+
+	public void translate(Expr.ArrayInitialiser expression, MemoryLocation target, Context context) {
+		System.out.println(expression.getArguments());
+		Type.Array t = (Type.Array) unwrap(expression.attribute(Attribute.Type.class).type);
+		// Alocatte space on heap.
+		// Set that address
+		RegisterLocation r = context.selectFreeRegister(t);
+		allocateSpaceOnHeap();
+		// Store the length,
+		// Store arguments.
+			// - this will be done by creating a memory location for the int then translating the expiration.
+		System.out.println(t);
+		System.out.println(expression.toString());
+		System.out.println(target);
+		System.out.println(context);
+
+		//MemoryLocation location = new MemoryLocation(t.getElement(), new );
+
+		List<Expr> exprs = expression.getArguments();
+
+//		List<Pair<String, Expr>> fields = e.getFields();
+//		for (int i = 0; i != fields.size(); ++i) {
+//			Pair<String, Expr> p = fields.get(i);
+//			Pair<Type, String> f = type.getFields().get(i);
+//			Type fieldType = unwrap(f.first());
+//			MemoryLocation fieldLoc = new MemoryLocation(fieldType, target.base, target.offset + offset);
+//			translate(p.second(), fieldLoc, context);
+//			offset += determineWidth(fieldType);
+//		}
 	}
 
 	/**
@@ -1896,6 +1913,10 @@ public class X86FileWriter {
 			return target.widthInBytes();
 		} else if (type instanceof Type.Named) {
 			return determineWidth(unwrap(type));
+		} else if (type instanceof Type.Array) {
+			//Type.Array r = (Type.Array) type;
+			//int mod = determineWidth(r.getElement());
+			return target.widthInBytes(); //Using a pointer.
 		} else {
 			throw new IllegalArgumentException("Unknown type encountered: " + type);
 		}
